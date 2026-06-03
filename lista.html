@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio</title>
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body >
+    <header class="header">
+        <h1>Lista de empleados</h1>
+        <button class="form-btn" id="btnCerrar">
+            Cerrar sesión
+        </button>
+    </header>
+
+   <div class="acomodo-lateral">
+        <form id="form-filtar">
+            <input type="text" placeholder="Buscar..." id="busqueda" class="input">
+            <button type="submit" id="buscar" class="form-btn">Buscar</button>
+        </form>
+
+        <button onclick="window.location.href='insertar.html'" class="form-btn">Agregar empleado</button>
+
+    </div>
+   <table>
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Puesto</th>
+                <th>Acciones</th>
+            </tr> 
+        </thead>
+
+        <tbody id="tabla-empleados">
+        </tbody>
+   </table>
+
+    <script type="module" src="main.js" defer></script>
+</body>
+</html>

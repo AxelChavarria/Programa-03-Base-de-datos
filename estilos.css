@@ -1,0 +1,209 @@
+.body-login {
+    display: flex;
+    justify-content: center; /* horizontal */
+    align-items: center;     /* vertical */
+    height: 100vh;           /* altura total de la pantalla */
+    margin: 0;
+}
+
+.form-container {
+  width: 350px;
+  height: 330px;
+  background-color: #fff;
+  box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+  border-radius: 10px;
+  box-sizing: border-box;
+  padding: 20px 30px;
+}
+
+.title {
+  text-align: center;
+  font-family: "Lucida Sans", "Lucida Sans Regular", "Lucida Grande",
+        "Lucida Sans Unicode", Geneva, Verdana, sans-serif;
+  margin: 10px 0 30px 0;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-bottom: 15px;
+}
+
+.input {
+  border-radius: 20px;
+  border: 1px solid #c0c0c0;
+  outline: 0 !important;
+  box-sizing: border-box;
+  padding: 12px 15px;
+}
+
+.form-btn {
+  padding: 10px 15px;
+  margin: 0px 5px;
+  font-family: "Lucida Sans", "Lucida Sans Regular", "Lucida Grande",
+        "Lucida Sans Unicode", Geneva, Verdana, sans-serif;
+  border-radius: 20px;
+  border: 0 !important;
+  outline: 0 !important;
+  background: teal;
+  color: white;
+  cursor: pointer;
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+}
+
+body{
+    background-color: #f4f6f8;
+    margin: 0;
+    
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* centra horizontal */
+    justify-content: center; /* centra vertical */
+}
+
+table {
+    
+    max-width: 1000px;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+}
+
+th {
+    background-color: #2c3e50;
+    color: white;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+tr:hover {
+    background-color: #e0e0e0;
+}
+
+.botones{
+    display: flex;
+    flex-direction: column; /* esto los pone en lista */
+    gap: 12px;              /* espacio entre botones */
+    width: 250px;  
+}
+
+.acomodo-lateral{
+    display: flex;
+    max-width: 750px;
+    width: 100%;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.acomodo-vertical {
+    display: flex;
+    flex-direction: column;   
+    max-width: 750px;
+    width: 100%;
+               /* espacio entre elementos */
+    font-family: "Lucida Sans", "Lucida Sans Regular", "Lucida Grande",
+        "Lucida Sans Unicode", Geneva, Verdana, sans-serif;
+}
+
+select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    appearance: none; /* quita estilo por defecto */
+    background-color: white;
+    font-size: 14px;
+    cursor: pointer;
+    outline: none;
+    transition: 0.3s;
+}
+
+/* focus */
+select:focus {
+    border-color: #2c3e50;
+    box-shadow: 0 0 5px rgba(44, 62, 80, 0.3);
+}
+
+
+
+h1 {
+    font-family: Arial, sans-serif;
+}
+
+.form-insertar{
+    display: flex;
+    flex-direction: column;
+    gap: 12px;              
+    
+    width: 300px;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+
+}
+.acciones{
+    display:flex;
+    gap: 9px;
+    flex-wrap: wrap; 
+}
+
+.acciones button {
+    flex: 1 1 45%;     /* 2 botones por fila aprox */
+    padding: 6px;
+    font-size: 12px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    align-items: center;
+    background-color: #1f2937; /* gris oscuro */
+    padding: 15px 30px;
+    color: white;
+    margin-bottom: 40px;
+}
+
+.form-btn-mov{
+  padding: 10px 15px;
+  margin: 0px 5px;
+  font-family: "Lucida Sans", "Lucida Sans Regular", "Lucida Grande",
+        "Lucida Sans Unicode", Geneva, Verdana, sans-serif;
+  border-radius: 20px;
+  border: 0 !important;
+  outline: 0 !important;
+  background: teal;
+  color: white;
+  cursor: pointer;
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.form-insertar-mov{
+    display: flex;
+    flex-direction: column;
+    gap: 12px;              
+    
+    width: 500px;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+
+}
