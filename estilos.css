@@ -207,3 +207,23 @@ h1 {
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 
 }
+
+#cuadro {
+    display: none;
+    position: fixed;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border: 2px solid #333;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 15px #555;
+}
+
+#fondo {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+}
