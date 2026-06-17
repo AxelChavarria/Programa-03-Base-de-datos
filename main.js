@@ -92,8 +92,6 @@ function mostrarInfo(titulo, descripcion){
 
 //tabla de planilla
 const tablaPlanilla = document.getElementById("tabla-planilla");
-
-console.log(tablaPlanilla)
 if (tablaPlanilla) {
 
     //llamamos a la base de datos
@@ -116,10 +114,9 @@ if (tablaPlanilla) {
     });
     */
 
-    console.log("Sí entré")
     tablaPlanilla.innerHTML = `
             <tr data-id="1">
-                    <td>bruto</td>
+                    <td class="salario">bruto</td>
                     <td class="deducciones">
                         deducciones
                     </td>
@@ -139,14 +136,61 @@ if (tablaPlanilla) {
 
     }
 
+    if (e.target.classList.contains("salario")) {
+
+        window.location.href = "salarioBruto.html";
+
+    }
 });
 }
 
 const modal = document.getElementById("cuadro");
 const btnCerrar = document.getElementById("btn-cerrar");
 
-btnCerrar.addEventListener("click", () => {
-    modal.style.display = "none";
-    document.getElementById("fondo").style.display="none";
-});
+if (btnCerrar) {
+    btnCerrar.addEventListener("click", () => {
+        modal.style.display = "none";
+        document.getElementById("fondo").style.display="none";
+    });
+}
 
+//tabla de salario bruto
+const tablaSalario = document.getElementById("tabla-salario");
+if (tablaSalario) {
+
+
+    tablaSalario.innerHTML = `
+            <tr data-id="1">
+                    <td>1</td>
+                    <td>1</td>
+                    <td>1</td>
+                    <td>2</td>
+                    <td>2</td>
+                    <td>2</td>
+                    <td>3</td>
+                    <td>3</td>
+                    <td>3</td>
+                </tr>`;
+    //llamamos a la base de datos
+
+
+    //desplegamos la información
+    /*
+    informacion.forEach(emp => {  //pasar por las listas
+        tablaSalario.innerHTML += `
+            <tr data-id="${emp.Id}">
+                    <td>${emp.}</td>
+                    <td>${emp.}</td>
+                    <td>${emp.}</td>
+                    <td>${emp.}</td>
+                    <td>${emp.}</td>
+                    <td>${emp.}</td>
+                    <td>${emp.}</td>
+                    <td>${emp.}</td>
+                    <td>${emp.}</td>
+                    <td>${emp.}</td>
+                    <td>${emp.}</td>
+                </tr>`;
+    });
+    */
+}
