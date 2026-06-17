@@ -133,6 +133,7 @@ app.post('/api/logout', async (req, res) => {
 app.get('/api/empleados', async (req, res) => {
     const { filtro, idPostByUser,ip } = req.query;
      
+    
 
     try {
         let pool = await sql.connect(config);
