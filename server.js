@@ -38,7 +38,7 @@ app.get('/', (req, res) => {
 
 app.post('/api/admin/cargar-todo', async (req, res) => {
     try {
-        const xmlPath = path.join(__dirname, 'datosCarga.xml');
+        const xmlPath = path.join(__dirname, 'Datos.xml');
         
         if (!fs.existsSync(xmlPath)) {
             return res.status(404).json({ Codigo: -1, Mensaje: "El archivo datosCarga.xml no existe en el servidor" });
@@ -54,6 +54,57 @@ app.post('/api/admin/cargar-todo', async (req, res) => {
 
         res.status(200).json(result.recordset[0]);
     } catch (err) {
-        res.status(500).json({ Codigo: -1, Mensaje: err.message });
+
+    console.error("Fallo crítico en /api/admin/cargar-todo:", err); 
+    
+    res.status(500).json({ 
+        Codigo: -1, 
+        Mensaje: err.message || JSON.stringify(err) || "Error desconocido en el servidor" 
+    });
+}
+});
+
+app.post('/api/auth/login', async (req, res) => {
+    const { username, password } = req.body;
+    
+
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+
+    try {
+        let pool = await sql.connect(config);
+        let result = await pool.request()
+            // Parámetros de entrada (INPUT)
+
+            .input('inUsername', sql.VarChar(50), username)
+            .input('inPassword', sql.VarChar(50), password)
+            .input('inIP', sql.VarChar(50), ip)
+
+            // Parámetros de salida (OUTPUT)
+            .output('outCodigo', sql.Int)
+            .output('outMensaje', sql.VarChar(100))
+            .output('outIdUsuario', sql.Int)
+            .output('outRol', sql.Int)
+            .execute('sp_ValidarLogin');
+
+        // Extraemos los valores que el SP dejó en los OUTPUTs
+        const { outCodigo, outMensaje, outIdUsuario, outRol } = result.output;
+
+   
+        if (outCodigo === 0) {
+            return res.status(200).json({
+                Codigo: outCodigo,
+                Mensaje: outMensaje,
+                UsuarioId: outIdUsuario,
+                RolId: outRol
+            });
+        } else {
+            return res.status(401).json({ Codigo: outCodigo, Mensaje: outMensaje });
+        }
+
+    } catch (err) {
+        console.error("Error crítico en el endpoint de login:", err);
+        res.status(500).json({ Codigo: -1, Mensaje: "Error de servidor en el intento de login" });
     }
 });
+
+app.listen(3002, () => console.log('Servidor corriendo en puerto 3002'));
