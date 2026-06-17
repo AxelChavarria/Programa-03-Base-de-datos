@@ -1,4 +1,4 @@
-
+import { loginUsuario, cerrarSesion } from './funcionesBD.js';
 
 //log in
 
@@ -7,13 +7,41 @@ if (formLogin) {
 
     formLogin.addEventListener("submit", async function(event) {
         event.preventDefault();
-        let datos = {
-            username: document.getElementById("user").value.trim(),
-            password: document.getElementById("contra").value.trim()
+        
+        var username = document.getElementById("user").value.trim()
+        var password = document.getElementById("contra").value.trim()
+        
+        //llamada a la base de datos
+        const res = await loginUsuario(username,password)
+        console.log(res)
+
+        if (res.Codigo == 0){
+            sessionStorage.setItem("usuario", JSON.stringify(res["UsuarioId"]));
+            if (res.RolId == 1){
+                window.location.href = "lista.html";
+            } else {
+                window.location.href = "empleado.html";
+            } 
+        } else {
+            alert(res.Mensaje)
         }
 
-        //llamada a la base de datos
+        
     });
+}
+
+//cerrar sesión
+function cerrarSesionMain(){
+
+    const id = JSON.parse(sessionStorage.getItem("admin"))
+    cerrarSesion(id)
+    sessionStorage.removeItem('usuario')
+    window.location.href='login.html'
+}
+
+const btnCerrarSesion = document.getElementById("btnCerrarSesion")
+if (btnCerrarSesion) {
+    btnCerrarSesion.addEventListener("click", cerrarSesionMain);
 }
 
 //lista de empleados 
@@ -24,7 +52,13 @@ if (tablaEmpleados) {
     
     
     //llamamos a la base de datos
+    const admin = JSON.parse(sessionStorage.getItem("usuario"))
 
+    const ip = JSON.parse(sessionStorage.getItem("ip"))
+
+    console.log(ip)
+    //const res = await obtenerListaEmpleados("", admin, "ip prueba")
+    //console.log(res)
 
     //desplegamos la información
     /*
