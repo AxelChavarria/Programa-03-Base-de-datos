@@ -185,5 +185,42 @@ CREATE TABLE DBError (
     DateTime DATETIME DEFAULT GETDATE() NOT NULL
 );
 USE Proyecto03BDD
-SELECT * FROM TipoEvento
-EXEC sp_CargarTodoXML
+
+
+
+------------------- INSERCIÓN DE USUARIOS EMPLEADO-------------------------
+INSERT INTO Usuario (Id, Username, PasswordHash, Tipo)
+    VALUES
+    (10, 'juan.perez',    'emp123', 2),
+    (11, 'maria.jimenez', 'emp123', 2),
+    (12, 'pedro.rod',     'emp123', 2),
+    (13, 'ana.fonseca',   'emp123', 2),
+    (14, 'luis.mora',     'emp123', 2),
+    (15, 'carlos.urena',  'emp123', 2),
+    (16, 'silvia.rojas',  'emp123', 2),
+    (17, 'jorge.flores',  'emp123', 2),
+    (18, 'laura.solis',   'emp123', 2),
+    (19, 'andres.monge',  'emp123', 2),
+    (20, 'esteban.del',   'emp123', 2),
+    (21, 'monica.esq',    'emp123', 2),
+    (22, 'ricardo.mar',   'emp123', 2),
+    (23, 'gabriela.zam',  'emp123', 2),
+    (24, 'diego.alfaro',  'emp123', 2);
+
+INSERT INTO Empleado (IdPuesto, ValorDocumentoIdentidad, Nombre, FechaContratacion, SaldoVacaciones, EsActivo, IdUsuario)
+    VALUES
+    (30, '112340567', 'Juan Carlos Perez Solano', '2025-01-15', 0.00, 1, 10),
+    (27, '203450678', 'Maria Jimenez Alvarado', '2025-02-10', 2.50, 1, 11),
+    (22, '304560789', 'Pedro Rodriguez Chaves', '2024-11-01', 5.00, 1, 12),
+    (24, '405670890', 'Ana Luisa Fonseca Gomez', '2025-03-22', 0.00, 1, 13),
+    (25, '506780901', 'Luis Fernando Mora Castro', '2025-05-18', 1.25, 1, 14),
+    (26, '607890012', 'Carlos Manuel Urena Vargas', '2024-08-12', 10.00, 1, 15),
+    (21, '708900123', 'Silvia Elena Rojas Herrera', '2025-04-05', 0.00, 1, 16),
+    (29, '109010234', 'Jorge Alberto Flores Marin', '2025-01-20', 4.00, 1, 17),
+    (23, '201230456', 'Laura Cristina Solis Mendez', '2024-09-30', 8.50, 1, 18),
+    (28, '302340567', 'Andres Felipe Monge Soto', '2025-06-01', 0.00, 1, 19),
+    (30, '403450678', 'Esteban Jose Delgado Ortiz', '2025-02-28', 2.00, 1, 20),
+    (24, '504560789', 'Monica Maria Esquivel Saenz', '2025-03-15', 1.75, 1, 21),
+    (21, '605670890', 'Ricardo Antonio Marin Chinchilla', '2024-07-19', 12.00, 1, 22),
+    (22, '706780901', 'Gabriela Lucia Zamora Blanco', '2025-05-02', 0.00, 1, 23),
+    (26, '107890012', 'Diego Alejandro Alfaro Miranda', '2025-04-18', 3.50, 1, 24);
