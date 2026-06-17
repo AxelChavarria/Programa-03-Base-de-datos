@@ -107,4 +107,24 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
+app.post('/api/logout', async (req, res) => {
+    const { idUsuario } = req.body;
+    const ip = req.ip || '0.0.0.0';
+
+    try {
+        let pool = await sql.connect(config);
+        let result = await pool.request()
+            .input('inIdUsuario', sql.Int, idUsuario)
+            .input('inIP', sql.VarChar, ip)
+            .output('outCodigo', sql.Int)
+            .output('outMensaje', sql.VarChar(100))
+            .execute('sp_RegistrarLogout');
+
+        res.json(result.output);
+    } catch (err) {
+        res.status(500).json({ outCodigo: -1, outMensaje: err.message });
+    }
+});
+
+
 app.listen(3002, () => console.log('Servidor corriendo en puerto 3002'));

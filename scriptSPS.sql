@@ -164,9 +164,28 @@ BEGIN
     
 
     --- Bloque de inserción
-    INSERT INTO BitacoraEvento (idTipoEvento, Descripcion, IdPostByUser, PostInIP, PostTime)
+    INSERT INTO dbo.BitacoraEvento (idTipoEvento, Descripcion, IdPostByUser, PostInIP, PostTime)
     VALUES (@TipoEvento, @MensajeBitacora +' : ' + @inUsername, 1, @inIP, GETDATE() AT TIME ZONE 'UTC' AT TIME ZONE 'Central America Standard Time')
 END;
 
 EXEC sp_ValidarLogin 'admin', 'admin123', 'ipprueba'
 SELECT * FROM dbo.BitacoraEvento
+
+
+
+CREATE PROCEDURE sp_RegistrarLogout
+    @inIdUsuario INT,
+    @inIP VARCHAR(50),
+    @outCodigo INT OUTPUT,
+    @outMensaje VARCHAR(100) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    INSERT INTO dbo.BitacoraEvento (IdTipoEvento, IdPostByUser, PostInIP, PostTime, Descripcion)
+    VALUES (4, @inIdUsuario, @inIP, GETDATE() AT TIME ZONE 'UTC' AT TIME ZONE 'Central America Standard Time', 'Cierre de sesión');
+    
+    SET @outCodigo = 0;
+    SET @outMensaje = 'Logout registrado';
+END;
+
+SELECT * FROM 

@@ -37,3 +37,21 @@ export async function loginUsuario(username, password) {
 const res = await loginUsuario("admin","admin123")
 console.log(res)
 */
+
+export async function cerrarSesion(idUsuario) {
+    try {
+        const respuestaRaw = await fetch("http://localhost:3002/api/logout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ idUsuario })
+        });
+        return await respuestaRaw.json();
+    } catch (err) {
+        return { outCodigo: -1, outMensaje: err.message };
+    }
+}
+
+/*
+const res = await cerrarSesion(1)
+console.log(res)
+*/
