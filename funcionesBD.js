@@ -18,9 +18,8 @@ export async function cargarTodoXML() {
 //console.log(await cargarTodoXML())
 
 export async function loginUsuario(username, password) {
-    console.log(`Enviando fetch de login para el usuario: ${username}`);
     try {
-        const respuestaRaw = await fetch("http://localhost:3001/api/auth/login", {
+        const respuestaRaw = await fetch("http://localhost:3002/api/auth/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username, password })
@@ -34,5 +33,7 @@ export async function loginUsuario(username, password) {
         return { Codigo: -1, Mensaje: err.message };
     }
 }
+/*
 const res = await loginUsuario("admin","admin123")
 console.log(res)
+*/

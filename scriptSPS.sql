@@ -50,10 +50,10 @@ BEGIN
             T.Node.value('@Nombre', 'VARCHAR(100)'),
             T.Node.value('@Accion', 'CHAR(1)')
         FROM @inXmlData.nodes('/Datos/TiposMovimiento/TipoMovimiento') AS T(Node)
-        WHERE T.Node.value('@Id', 'INT') NOT IN (SELECT Id FROM TipoMovimiento); -- <-- CORREGIDO AQUï¿½
+        WHERE T.Node.value('@Id', 'INT') NOT IN (SELECT Id FROM TipoMovimiento); -- <-- CORREGIDO AQUÍ
 
         
-        --- TIPOS DE DEDUCCIï¿½N
+        --- TIPOS DE DEDUCCIÓN
         INSERT INTO TipoDeduccion (Id, Nombre, EsObligatoria, EsPorcentual, Valor, IdTipoMovimiento)
         SELECT 
             T.Node.value('@Id', 'INT'),
@@ -85,7 +85,7 @@ BEGIN
 
         COMMIT TRANSACTION;
 
-        SELECT 1 AS Codigo, 'Carga masiva de catï¿½logos ejecutada con ï¿½xito' AS Mensaje;
+        SELECT 1 AS Codigo, 'Carga masiva de catálogos ejecutada con éxito' AS Mensaje;
 
     END TRY
     BEGIN CATCH
@@ -106,3 +106,67 @@ BEGIN
         SELECT -1 AS Codigo, 'Error interno al procesar el XML: ' + ERROR_MESSAGE() AS Mensaje;
     END CATCH
 END;
+
+
+
+ALTER PROCEDURE sp_ValidarLogin
+    @inUsername VARCHAR(50),
+    @inPassword VARCHAR(50),
+    @inIP VARCHAR(50),
+    @outCodigo INT OUTPUT,
+    @outMensaje VARCHAR(100) OUTPUT,
+    @outIdUsuario INT OUTPUT,
+    @outRol INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    --- Variables para la inserción
+    DECLARE @TipoEvento INT;
+    SET @outIdUsuario = NULL;
+    DECLARE @MensajeBitacora VARCHAR(128)
+    
+    ---- Validar username
+    IF NOT EXISTS (SELECT 1 FROM dbo.Usuario U WHERE @inUsername = U.Username)
+    BEGIN
+        SELECT @outCodigo = Codigo, @outMensaje = Descripcion 
+        FROM dbo.Error WHERE Codigo = 50001; 
+        SET @TipoEvento = 2
+        SET @MensajeBitacora = 'Login No Exitoso'
+    END
+
+    ELSE
+    BEGIN
+    -- Validar Contraseña
+        IF NOT EXISTS (SELECT 1 FROM dbo.Usuario U WHERE U.PasswordHash = @inPassword AND U.Username = @inUsername)
+        BEGIN 
+            SELECT @outCodigo = Codigo, @outMensaje = Descripcion 
+            FROM dbo.Error WHERE Codigo = 50002; 
+            SET @TipoEvento = 2
+            SET @MensajeBitacora = 'Login No Exitoso'
+        END
+        ELSE
+        BEGIN
+
+        SELECT @outIdUsuario = Id FROM dbo.Usuario U
+        WHERE U.Username = @inUsername AND U.PasswordHash = @inPassword;
+
+
+        IF @outIdUsuario IS NOT NULL -- Si hay usuario
+        BEGIN
+            SET @TipoEvento = 1
+            SET @MensajeBitacora = 'Login Exitoso'
+            SET @outCodigo = 0; SET @outMensaje = 'Éxito';
+            SELECT @outRol = Tipo FROM dbo.Usuario U 
+            WHERE U.Username = @inUsername
+        END
+      END
+    END
+    
+
+    --- Bloque de inserción
+    INSERT INTO BitacoraEvento (idTipoEvento, Descripcion, IdPostByUser, PostInIP, PostTime)
+    VALUES (@TipoEvento, @MensajeBitacora +' : ' + @inUsername, 1, @inIP, GETDATE() AT TIME ZONE 'UTC' AT TIME ZONE 'Central America Standard Time')
+END;
+
+EXEC sp_ValidarLogin 'admin', 'admin123', 'ipprueba'
+SELECT * FROM dbo.BitacoraEvento

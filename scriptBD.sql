@@ -184,3 +184,6 @@ CREATE TABLE DBError (
     Message VARCHAR(MAX) NOT NULL, 
     DateTime DATETIME DEFAULT GETDATE() NOT NULL
 );
+USE Proyecto03BDD
+SELECT * FROM TipoEvento
+EXEC sp_CargarTodoXML
