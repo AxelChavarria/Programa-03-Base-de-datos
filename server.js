@@ -20,10 +20,14 @@ const config = {
     password: 'Tec20IC26', 
     server: 'py-01-bdd-1s2026.database.windows.net', 
     database: 'Proyecto03BDD',
+  
+    // Subimos a 10 minutos
     options: {
         encrypt: true, 
-        trustServerCertificate: true 
-    }
+        trustServerCertificate: true,
+
+    },
+    pool: 
 };
 
 

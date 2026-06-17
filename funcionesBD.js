@@ -82,3 +82,30 @@ export async function obtenerListaEmpleados(filtro,idPostByUser, ip) {
 const res = await obtenerListaEmpleados("Lu",1, "ip prueba")
 console.log(res)
 */
+
+export async function cargarPlanillaDesdeArchivo() {
+    try {
+        const response = await fetch('http://localhost:3002/api/admin/cargar-planilla', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const resultado = await response.json();
+
+        if (response.ok && resultado.Codigo !== -1) {
+            console.log("Éxito:", resultado.Mensaje);
+            return true;
+        } else {
+            console.error("Error en la carga:", resultado.Mensaje);
+            return false;
+        }
+
+    } catch (error) {
+        console.error("Fallo de red al conectar con /api/admin/cargar-planilla:", error.message);
+        return false;
+    }
+}
+
+console.log(await cargarPlanillaDesdeArchivo())

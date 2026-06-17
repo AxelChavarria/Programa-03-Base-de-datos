@@ -50,10 +50,10 @@ BEGIN
             T.Node.value('@Nombre', 'VARCHAR(100)'),
             T.Node.value('@Accion', 'CHAR(1)')
         FROM @inXmlData.nodes('/Datos/TiposMovimiento/TipoMovimiento') AS T(Node)
-        WHERE T.Node.value('@Id', 'INT') NOT IN (SELECT Id FROM TipoMovimiento); -- <-- CORREGIDO AQUÍ
+        WHERE T.Node.value('@Id', 'INT') NOT IN (SELECT Id FROM TipoMovimiento); -- <-- CORREGIDO AQUï¿½
 
         
-        --- TIPOS DE DEDUCCIÓN
+        --- TIPOS DE DEDUCCIï¿½N
         INSERT INTO TipoDeduccion (Id, Nombre, EsObligatoria, EsPorcentual, Valor, IdTipoMovimiento)
         SELECT 
             T.Node.value('@Id', 'INT'),
@@ -85,7 +85,7 @@ BEGIN
 
         COMMIT TRANSACTION;
 
-        SELECT 1 AS Codigo, 'Carga masiva de catálogos ejecutada con éxito' AS Mensaje;
+        SELECT 1 AS Codigo, 'Carga masiva de catï¿½logos ejecutada con ï¿½xito' AS Mensaje;
 
     END TRY
     BEGIN CATCH
@@ -120,7 +120,7 @@ ALTER PROCEDURE sp_ValidarLogin
 AS
 BEGIN
     SET NOCOUNT ON;
-    --- Variables para la inserción
+    --- Variables para la inserciï¿½n
     DECLARE @TipoEvento INT;
     SET @outIdUsuario = NULL;
     DECLARE @MensajeBitacora VARCHAR(128)
@@ -136,7 +136,7 @@ BEGIN
 
     ELSE
     BEGIN
-    -- Validar Contraseña
+    -- Validar Contraseï¿½a
         IF NOT EXISTS (SELECT 1 FROM dbo.Usuario U WHERE U.PasswordHash = @inPassword AND U.Username = @inUsername)
         BEGIN 
             SELECT @outCodigo = Codigo, @outMensaje = Descripcion 
@@ -155,7 +155,7 @@ BEGIN
         BEGIN
             SET @TipoEvento = 1
             SET @MensajeBitacora = 'Login Exitoso'
-            SET @outCodigo = 0; SET @outMensaje = 'Éxito';
+            SET @outCodigo = 0; SET @outMensaje = 'ï¿½xito';
             SELECT @outRol = Tipo FROM dbo.Usuario U 
             WHERE U.Username = @inUsername
         END
@@ -163,7 +163,7 @@ BEGIN
     END
     
 
-    --- Bloque de inserción
+    --- Bloque de inserciï¿½n
     INSERT INTO dbo.BitacoraEvento (idTipoEvento, Descripcion, IdPostByUser, PostInIP, PostTime)
     VALUES (@TipoEvento, @MensajeBitacora +' : ' + @inUsername, 1, @inIP, GETDATE() AT TIME ZONE 'UTC' AT TIME ZONE 'Central America Standard Time')
 END;
@@ -182,7 +182,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
     INSERT INTO dbo.BitacoraEvento (IdTipoEvento, IdPostByUser, PostInIP, PostTime, Descripcion)
-    VALUES (4, @inIdUsuario, @inIP, GETDATE() AT TIME ZONE 'UTC' AT TIME ZONE 'Central America Standard Time', 'Cierre de sesión');
+    VALUES (4, @inIdUsuario, @inIP, GETDATE() AT TIME ZONE 'UTC' AT TIME ZONE 'Central America Standard Time', 'Cierre de sesiï¿½n');
     
     SET @outCodigo = 0;
     SET @outMensaje = 'Logout registrado';
@@ -217,7 +217,7 @@ BEGIN
     END
 
 
-    -- solo números (cédula)
+    -- solo nï¿½meros (cï¿½dula)
     ELSE IF @inFiltro NOT LIKE '%[^0-9]%'
     BEGIN
         SELECT 
@@ -254,10 +254,67 @@ BEGIN
         SET @HayFiltro = 1
     END
 
-    IF @HayFiltro = 1 -- Hubo filtro: inserción en bitácora
+    IF @HayFiltro = 1 -- Hubo filtro: inserciï¿½n en bitï¿½cora
     BEGIN
             INSERT INTO dbo.BitacoraEvento (idTipoEvento, Descripcion, IdPostByUser, PostInIP, PostTime)
             VALUES (11, 'Consulta con el filtro "'+ @inFiltro +'"',@inIdPostByUser, @inIP, GETDATE() AT TIME ZONE 'UTC' AT TIME ZONE 'Central America Standard Time');
     END
 END;
 
+
+
+CREATE PROCEDURE sp_GetPlanillasSemanales
+    @inIdEmpleado INT,
+    @inLimite INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT TOP (@inLimite)
+        P.Id AS IdPlanillaSemanal,
+        P.IdSemanaPlanilla,
+        -- Pegamos la fecha de inicio y fin para que se vea lindo: "18/05/2026 al 24/05/2026"
+        CONVERT(VARCHAR, S.FechaInicio, 103) + ' al ' + CONVERT(VARCHAR, S.FechaFin, 103) AS Periodo,
+        P.SalarioBruto,     -- <-- Esto serï¿½ clickeable en tu pantalla
+        P.TotalDeducciones, -- <-- Esto tambiï¿½n serï¿½ clickeable
+        P.SalarioNeto,
+        P.HorasOrdinarias,
+        P.HorasExtrasNormales,
+        P.HorasExtrasDobles
+    FROM PlanillaSemXEmpleado P
+    INNER JOIN SemanaPlanilla S ON P.IdSemanaPlanilla = S.Id
+    WHERE P.IdEmpleado = @inIdEmpleado
+    ORDER BY S.FechaInicio DESC; 
+
+
+
+
+
+
+
+
+CREATE OR ALTER TRIGGER TR_Empleado_AsignarDeduccionesObligatorias
+ON Empleado
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Insertar en DeduccionXEmpleado las deducciones obligatorias de ley (10.67%)
+    -- Se mapea dinÃ¡micamente con las deducciones marcadas como obligatorias en el catÃ¡logo
+    INSERT INTO DeduccionXEmpleado (IdEmpleado, IdTipoDeduccion, PorcentajeOMonto, EsActiva)
+    SELECT 
+        i.Id, 
+        td.Id, 
+        td.Valor * 100, -- Alombrado segÃºn el requerimiento (o td.Valor * 100 si se prefiere del catÃ¡logo)
+        1
+    FROM inserted i
+    CROSS JOIN TipoDeduccion td
+    WHERE td.EsObligatoria = 1;
+END;
+
+SELECT * FROM PlanillaSemXEmpleado
+
+SELECT * FROM Usuario
+SELECT * FROM Empleado
+CREATE PROCEDURE sp_AgregarEmpleado

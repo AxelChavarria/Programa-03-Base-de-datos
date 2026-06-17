@@ -138,7 +138,8 @@ CREATE TABLE PlanillaSemXEmpleado (
     HorasExtrasDobles INT DEFAULT 0 NOT NULL,
     UNIQUE (IdEmpleado, IdSemanaPlanilla)
 );
-
+ALTER TABLE PlanillaSemXEmpleado
+ADD IdTipoJornada INT
 CREATE TABLE PlanillaMesXEmpleado (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     IdEmpleado INT FOREIGN KEY REFERENCES Empleado(Id) NOT NULL,
@@ -187,40 +188,140 @@ CREATE TABLE DBError (
 USE Proyecto03BDD
 
 
-
+SELECT * FROM BitacoraEvento
 ------------------- INSERCIÓN DE USUARIOS EMPLEADO-------------------------
-INSERT INTO Usuario (Id, Username, PasswordHash, Tipo)
-    VALUES
-    (10, 'juan.perez',    'emp123', 2),
-    (11, 'maria.jimenez', 'emp123', 2),
-    (12, 'pedro.rod',     'emp123', 2),
-    (13, 'ana.fonseca',   'emp123', 2),
-    (14, 'luis.mora',     'emp123', 2),
-    (15, 'carlos.urena',  'emp123', 2),
-    (16, 'silvia.rojas',  'emp123', 2),
-    (17, 'jorge.flores',  'emp123', 2),
-    (18, 'laura.solis',   'emp123', 2),
-    (19, 'andres.monge',  'emp123', 2),
-    (20, 'esteban.del',   'emp123', 2),
-    (21, 'monica.esq',    'emp123', 2),
-    (22, 'ricardo.mar',   'emp123', 2),
-    (23, 'gabriela.zam',  'emp123', 2),
-    (24, 'diego.alfaro',  'emp123', 2);
+ALTER TABLE Empleado
+ADD CuentaBancaria VARCHAR(256)
+USE Proyecto03BDD
 
-INSERT INTO Empleado (IdPuesto, ValorDocumentoIdentidad, Nombre, FechaContratacion, SaldoVacaciones, EsActivo, IdUsuario)
-    VALUES
-    (30, '112340567', 'Juan Carlos Perez Solano', '2025-01-15', 0.00, 1, 10),
-    (27, '203450678', 'Maria Jimenez Alvarado', '2025-02-10', 2.50, 1, 11),
-    (22, '304560789', 'Pedro Rodriguez Chaves', '2024-11-01', 5.00, 1, 12),
-    (24, '405670890', 'Ana Luisa Fonseca Gomez', '2025-03-22', 0.00, 1, 13),
-    (25, '506780901', 'Luis Fernando Mora Castro', '2025-05-18', 1.25, 1, 14),
-    (26, '607890012', 'Carlos Manuel Urena Vargas', '2024-08-12', 10.00, 1, 15),
-    (21, '708900123', 'Silvia Elena Rojas Herrera', '2025-04-05', 0.00, 1, 16),
-    (29, '109010234', 'Jorge Alberto Flores Marin', '2025-01-20', 4.00, 1, 17),
-    (23, '201230456', 'Laura Cristina Solis Mendez', '2024-09-30', 8.50, 1, 18),
-    (28, '302340567', 'Andres Felipe Monge Soto', '2025-06-01', 0.00, 1, 19),
-    (30, '403450678', 'Esteban Jose Delgado Ortiz', '2025-02-28', 2.00, 1, 20),
-    (24, '504560789', 'Monica Maria Esquivel Saenz', '2025-03-15', 1.75, 1, 21),
-    (21, '605670890', 'Ricardo Antonio Marin Chinchilla', '2024-07-19', 12.00, 1, 22),
-    (22, '706780901', 'Gabriela Lucia Zamora Blanco', '2025-05-02', 0.00, 1, 23),
-    (26, '107890012', 'Diego Alejandro Alfaro Miranda', '2025-04-18', 3.50, 1, 24);
+INSERT INTO Usuario (Id,Username, PasswordHash, Tipo) 
+    VALUES (10,'Mencar', 'Gojira', 2);
+    
+    INSERT INTO Empleado (ValorDocumentoIdentidad, Nombre, IdPuesto, CuentaBancaria, IdUsuario, FechaContratacion)
+    VALUES ('110011001', 'Carlos Mendoza', (SELECT Id FROM Puesto WHERE Nombre = 'Electricista'), 'CR2415115201001026284066', SCOPE_IDENTITY(), '2026-03-06');
+
+    -- Empleado 2: Ana Rodriguez
+    INSERT INTO Usuario (Id, Username, PasswordHash, Tipo) 
+    VALUES (20,'Rodrigo', 'Seguridad', 2);
+    SELECT * FROM Empleado
+    SELECT * From Usuario
+    USE Proyecto03BDD
+    INSERT INTO Empleado (ValorDocumentoIdentidad, Nombre, IdPuesto, CuentaBancaria, IdUsuario, FechaContratacion)
+    VALUES ('30582792', 'Rodriguez', (SELECT Id FROM Puesto WHERE Nombre = 'Cajero'), 'CR2415115201901026284067', 20, '2026-03-06');
+
+    -- Empleado 3: Nicolas Vargas
+    INSERT INTO Usuario (Id, Username, PasswordHash, Tipo) 
+    VALUES (12,'Varnic', 'EndgamE', 2);
+    
+    INSERT INTO Empleado (ValorDocumentoIdentidad, Nombre, IdPuesto, CuentaBancaria, IdUsuario, FechaContratacion)
+    VALUES ('194739285', 'Nicolas Vargas', (SELECT Id FROM Puesto WHERE Nombre = 'Conductor'), 'CR2415115201901026392748', SCOPE_IDENTITY(), '2026-03-06');
+
+    -- Empleado 4: Laura Castro
+    INSERT INTO Usuario (Id, Username, PasswordHash, Tipo) 
+    VALUES (13,'Caslaur', 'Laura123', 2);
+    
+    INSERT INTO Empleado (ValorDocumentoIdentidad, Nombre, IdPuesto, CuentaBancaria, IdUsuario, FechaContratacion)
+    VALUES ('222333444', 'Laura Castro', (SELECT Id FROM Puesto WHERE Nombre = 'Recepcionista'), 'CR2415115201901026111001', SCOPE_IDENTITY(), '2026-03-06');
+
+    -- Empleado 5: Pedro Arias
+    INSERT INTO Usuario (Id, Username, PasswordHash, Tipo) 
+    VALUES (14,'Ariped', 'Pedro456', 2);
+    
+    INSERT INTO Empleado (ValorDocumentoIdentidad, Nombre, IdPuesto, CuentaBancaria, IdUsuario, FechaContratacion)
+    VALUES ('333444555', 'Pedro Arias', (SELECT Id FROM Puesto WHERE Nombre = 'Fontanero'), 'CR2415115201901026111002', SCOPE_IDENTITY(), '2026-03-06');
+
+    SELECT * FROM Empleado
+    -- ============================================================================
+    -- 2. ASOCIAR EMPLEADOS CON DEDUCCIONES
+    -- ============================================================================
+    SELECT * FROM DeduccionXEmpleado
+    -- Carlos Mendoza - Ahorro Asociacion Solidarista
+    INSERT INTO DeduccionXEmpleado (IdEmpleado, IdTipoDeduccion, PorcentajeOMonto)
+    VALUES ((SELECT Id FROM Empleado WHERE ValorDocumentoIdentidad = '110011001'), (SELECT Id FROM TipoDeduccion WHERE Nombre = 'Ahorro Asociacion Solidarista'), 0.00);
+
+    -- Nicolas Vargas - Pension Alimenticia
+    INSERT INTO DeduccionXEmpleado (IdEmpleado, IdTipoDeduccion, PorcentajeOMonto)
+    VALUES ((SELECT Id FROM Empleado WHERE ValorDocumentoIdentidad = '194739285'), (SELECT Id FROM TipoDeduccion WHERE Nombre = 'Pension Alimenticia'), 50000.00);
+
+    -- Laura Castro - Ahorro Vacacional
+    INSERT INTO DeduccionXEmpleado (IdEmpleado, IdTipoDeduccion, PorcentajeOMonto)
+    VALUES ((SELECT Id FROM Empleado WHERE ValorDocumentoIdentidad = '222333444'), (SELECT Id FROM TipoDeduccion WHERE Nombre = 'Ahorro Vacacional'), 20000.00);
+
+    -- Pedro Arias - Ahorro Asociacion Solidarista
+    INSERT INTO DeduccionXEmpleado (IdEmpleado, IdTipoDeduccion, PorcentajeOMonto)
+    VALUES ((SELECT Id FROM Empleado WHERE ValorDocumentoIdentidad = '333444555'), (SELECT Id FROM TipoDeduccion WHERE Nombre = 'Ahorro Asociacion Solidarista'), 0.00);
+
+
+    -- ============================================================================
+    -- 3. ASIGNAR JORNADAS SEMANALES
+    -- ============================================================================
+
+    -- Carlos Mendoza - Diurno
+    INSERT INTO JornadaXEmpleado (IdEmpleado, IdTipoJornada, FechaInicioSemana)
+    VALUES ((SELECT Id FROM Empleado WHERE ValorDocumentoIdentidad = '110011001'), (SELECT Id FROM TipoJornada WHERE Nombre = 'Diurno'), '2026-03-06');
+
+    -- Ana Rodriguez - Vespertino
+    INSERT INTO JornadaXEmpleado (IdEmpleado, IdTipoJornada, FechaInicioSemana)
+    VALUES ((SELECT Id FROM Empleado WHERE ValorDocumentoIdentidad = '305827920'), (SELECT Id FROM TipoJornada WHERE Nombre = 'Vespertino'), '2026-03-06');
+
+    -- Nicolas Vargas - Nocturno
+    INSERT INTO JornadaXEmpleado (IdEmpleado, IdTipoJornada, FechaInicioSemana)
+    VALUES ((SELECT Id FROM Empleado WHERE ValorDocumentoIdentidad = '194739285'), (SELECT Id FROM TipoJornada WHERE Nombre = 'Nocturno'), '2026-03-06');
+
+    -- Laura Castro - Diurno
+    INSERT INTO JornadaXEmpleado (IdEmpleado, IdTipoJornada, FechaInicioSemana)
+    VALUES ((SELECT Id FROM Empleado WHERE ValorDocumentoIdentidad = '222333444'), (SELECT Id FROM TipoJornada WHERE Nombre = 'Diurno'), '2026-03-06');
+
+    -- Pedro Arias - Vespertino
+    INSERT INTO JornadaXEmpleado (IdEmpleado, IdTipoJornada, FechaInicioSemana)
+    VALUES ((SELECT Id FROM Empleado WHERE ValorDocumentoIdentidad = '333444555'), (SELECT Id FROM TipoJornada WHERE Nombre = 'Vespertino'), '2026-03-06');
+
+
+    INSERT INTO PlanillaSemXEmpleado (IdEmpleado, IdSemanaPlanilla, IdTipoJornada, SalarioBruto, TotalDeducciones, SalarioNeto, HorasOrdinarias, HorasExtrasNormales, HorasExtrasDobles)
+    VALUES (
+        (SELECT Id FROM Empleado WHERE ValorDocumentoIdentidad = '110011001'), 
+        (SELECT Id FROM SemanaPlanilla WHERE '2026-03-06' BETWEEN FechaInicio AND FechaFin),
+        (SELECT Id FROM TipoJornada WHERE Nombre = 'Diurno'),
+        0, 0, 0, 0, 0, 0 -- Inician en cero, luego se actualizan con las asistencias
+    );
+
+    -- Ana Rodriguez - Vespertino
+    INSERT INTO PlanillaSemXEmpleado (IdEmpleado, IdSemanaPlanilla, IdTipoJornada, SalarioBruto, TotalDeducciones, SalarioNeto, HorasOrdinarias, HorasExtrasNormales, HorasExtrasDobles)
+    VALUES (
+        (SELECT Id FROM Empleado WHERE ValorDocumentoIdentidad = '305827920'), 
+        (SELECT Id FROM SemanaPlanilla WHERE '2026-03-06' BETWEEN FechaInicio AND FechaFin),
+        (SELECT Id FROM TipoJornada WHERE Nombre = 'Vespertino'),
+        0, 0, 0, 0, 0, 0
+    );
+
+    -- Nicolas Vargas - Nocturno
+    INSERT INTO PlanillaSemXEmpleado (IdEmpleado, IdSemanaPlanilla, IdTipoJornada, SalarioBruto, TotalDeducciones, SalarioNeto, HorasOrdinarias, HorasExtrasNormales, HorasExtrasDobles)
+    VALUES (
+        (SELECT Id FROM Empleado WHERE ValorDocumentoIdentidad = '194739285'), 
+        (SELECT Id FROM SemanaPlanilla WHERE '2026-03-06' BETWEEN FechaInicio AND FechaFin),
+        (SELECT Id FROM TipoJornada WHERE Nombre = 'Nocturno'),
+        0, 0, 0, 0, 0, 0
+    );
+
+    -- Laura Castro - Diurno
+    INSERT INTO PlanillaSemXEmpleado (IdEmpleado, IdSemanaPlanilla, IdTipoJornada, SalarioBruto, TotalDeducciones, SalarioNeto, HorasOrdinarias, HorasExtrasNormales, HorasExtrasDobles)
+    VALUES (
+        (SELECT Id FROM Empleado WHERE ValorDocumentoIdentidad = '222333444'), 
+        (SELECT Id FROM SemanaPlanilla WHERE '2026-03-06' BETWEEN FechaInicio AND FechaFin),
+        (SELECT Id FROM TipoJornada WHERE Nombre = 'Diurno'),
+        0, 0, 0, 0, 0, 0
+    );
+
+    -- Pedro Arias - Vespertino
+    INSERT INTO PlanillaSemXEmpleado (IdEmpleado, IdSemanaPlanilla, IdTipoJornada, SalarioBruto, TotalDeducciones, SalarioNeto, HorasOrdinarias, HorasExtrasNormales, HorasExtrasDobles)
+    VALUES (
+        (SELECT Id FROM Empleado WHERE ValorDocumentoIdentidad = '333444555'), 
+        (SELECT Id FROM SemanaPlanilla WHERE '2026-03-06' BETWEEN FechaInicio AND FechaFin),
+        (SELECT Id FROM TipoJornada WHERE Nombre = 'Vespertino'),
+        0, 0, 0, 0, 0, 0
+    );
+
+SELECT * FROM SemanaPlanilla
+
+INSERT INTO SemanaPlanilla (FechaInicio, FechaFin)
+    VALUES ('2026-03-06', '2026-03-12');
