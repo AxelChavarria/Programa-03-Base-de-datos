@@ -79,6 +79,6 @@ export async function obtenerListaEmpleados(filtro,idPostByUser, ip) {
 }
 
 /*
-const res = await obtenerListaEmpleados("Lu",1, "ip prueba")
+const res = await obtenerListaEmpleados("",1, "ip prueba")
 console.log(res)
 */

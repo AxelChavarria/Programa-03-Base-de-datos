@@ -1,4 +1,4 @@
-import { loginUsuario, cerrarSesion } from './funcionesBD.js';
+import { loginUsuario, cerrarSesion, obtenerListaEmpleados } from './funcionesBD.js';
 
 //log in
 
@@ -54,14 +54,14 @@ if (tablaEmpleados) {
     //llamamos a la base de datos
     const admin = JSON.parse(sessionStorage.getItem("usuario"))
 
-    const ip = JSON.parse(sessionStorage.getItem("ip"))
+    
 
-    console.log(ip)
-    //const res = await obtenerListaEmpleados("", admin, "ip prueba")
-    //console.log(res)
+    
+    const informacion = await obtenerListaEmpleados("", admin, "ip prueba")
+    
 
     //desplegamos la información
-    /*
+    
     informacion.forEach(emp => {  //pasar por las listas
         tablaEmpleados.innerHTML += `
             <tr data-id="${emp.Id}">
@@ -74,7 +74,7 @@ if (tablaEmpleados) {
 
                 </tr>`;
     });
-    */
+    
 
     //boton para filtrar con validaciones 
     const boton = document.getElementById("buscar");
@@ -85,12 +85,12 @@ if (tablaEmpleados) {
         const valor = document.getElementById("busqueda").value.trim()
         
         //llamada a la base de datos
-        
+        const informacion = await obtenerListaEmpleados(valor, admin, "ip prueba")
 
         tablaEmpleados.innerHTML = ""
 
         //desplegamos la información
-        /*
+        
         informacion.forEach(emp => {  //pasar por las listas
             tablaEmpleados.innerHTML += `
                 <tr data-id="${emp.Id}">
@@ -103,7 +103,7 @@ if (tablaEmpleados) {
 
                 </tr>`;
         });
-        */
+        
     });
 
     

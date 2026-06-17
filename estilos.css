@@ -227,3 +227,15 @@ h1 {
     inset: 0;
     background: rgba(0,0,0,0.5);
 }
+
+.tablaEmpleados {
+    
+    min-width: 1000px;
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
