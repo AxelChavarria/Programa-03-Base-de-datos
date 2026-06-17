@@ -126,5 +126,23 @@ app.post('/api/logout', async (req, res) => {
     }
 });
 
+app.get('/api/empleados', async (req, res) => {
+    const { filtro, idPostByUser,ip } = req.query;
+     
+
+    try {
+        let pool = await sql.connect(config);
+        let result = await pool.request()
+            .input('inFiltro', sql.VarChar, filtro || '')
+            .input('inIdPostByUser', sql.Int, parseInt(idPostByUser))
+            .input('inIP', sql.VarChar, ip)
+            .execute('sp_ListarEmpleados');
+
+        res.json(result.recordset); 
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 
 app.listen(3002, () => console.log('Servidor corriendo en puerto 3002'));

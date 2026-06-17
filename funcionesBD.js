@@ -55,3 +55,30 @@ export async function cerrarSesion(idUsuario) {
 const res = await cerrarSesion(1)
 console.log(res)
 */
+
+export async function obtenerListaEmpleados(filtro,idPostByUser, ip) {
+    
+    try {
+        const url = `http://localhost:3002/api/empleados?filtro=${encodeURIComponent(filtro || '')}&idPostByUser=${idPostByUser}&ip=${ip}`;
+
+        const respuestaRaw = await fetch(url);
+
+        if (!respuestaRaw.ok) {
+            const text = await respuestaRaw.text();
+            throw new Error(`Error HTTP: ${text}`);
+        }
+
+        const empleados = await respuestaRaw.json();
+
+        return empleados; // [{Id, Nombre, ...}]
+
+    } catch (err) {
+        console.error("Error en obtenerListaEmpleados:", err.message);
+        return [];
+    }
+}
+
+/*
+const res = await obtenerListaEmpleados("Lu",1, "ip prueba")
+console.log(res)
+*/

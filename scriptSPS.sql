@@ -188,4 +188,76 @@ BEGIN
     SET @outMensaje = 'Logout registrado';
 END;
 
-SELECT * FROM 
+SELECT * FROM dbo.BitacoraEvento
+
+
+
+
+CREATE PROCEDURE sp_ListarEmpleados
+    @inFiltro VARCHAR(100),
+    @inIdPostByUser INT,
+    @inIP VARCHAR(50)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @HayFiltro INT
+    -- Sin filtro (retorna todo)
+    IF @inFiltro IS NULL OR @inFiltro = ''
+    BEGIN
+        SELECT 
+            E.Id, 
+            E.Nombre, 
+            E.ValorDocumentoIdentidad, 
+            P.Nombre AS NombrePuesto, 
+            E.SaldoVacaciones
+        FROM dbo.Empleado E
+        INNER JOIN dbo.Puesto P ON E.IdPuesto = P.Id
+        WHERE E.EsActivo = 1
+        ORDER BY E.Nombre ASC;
+    END
+
+
+    -- solo números (cédula)
+    ELSE IF @inFiltro NOT LIKE '%[^0-9]%'
+    BEGIN
+        SELECT 
+            E.Id, 
+            E.Nombre, 
+            E.ValorDocumentoIdentidad, 
+            P.Nombre AS NombrePuesto, 
+            E.SaldoVacaciones
+        FROM dbo.Empleado E
+        INNER JOIN dbo.Puesto P ON E.IdPuesto = P.Id
+        WHERE E.ValorDocumentoIdentidad LIKE '%' + @inFiltro + '%'
+          AND E.EsActivo = 1
+        ORDER BY E.Nombre ASC;
+        SET @HayFiltro = 1
+            
+    END
+
+
+    --letras (por Nombre)
+    ELSE
+    BEGIN
+        SELECT 
+            E.Id, 
+            E.Nombre, 
+            E.ValorDocumentoIdentidad, 
+            P.Nombre AS NombrePuesto, 
+            E.SaldoVacaciones
+        FROM dbo.Empleado E
+        INNER JOIN dbo.Puesto P ON E.IdPuesto = P.Id
+        WHERE E.Nombre LIKE '%' + @inFiltro + '%'
+          AND E.EsActivo = 1
+        ORDER BY E.Nombre ASC;
+
+        SET @HayFiltro = 1
+    END
+
+    IF @HayFiltro = 1 -- Hubo filtro: inserción en bitácora
+    BEGIN
+            INSERT INTO dbo.BitacoraEvento (idTipoEvento, Descripcion, IdPostByUser, PostInIP, PostTime)
+            VALUES (11, 'Consulta con el filtro "'+ @inFiltro +'"',@inIdPostByUser, @inIP, GETDATE() AT TIME ZONE 'UTC' AT TIME ZONE 'Central America Standard Time');
+    END
+END;
+
