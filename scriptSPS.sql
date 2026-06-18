@@ -1217,6 +1217,8 @@ BEGIN
     DECLARE @XMLAsociarDeducciones XML;
     DECLARE @XMLAsignarJornadas XML;
     DECLARE @XMLAsistencias XML;
+    DECLARE @XMLEliminarEmpleados XML;
+    DECLARE @XMLDesasociarDeducciones XML;
 
     BEGIN TRY
         -- 1. Extraer y ordenar los días cronológicamente
@@ -1241,6 +1243,36 @@ BEGIN
             BEGIN
                 SET @XMLInsertarEmpleados = @XMLDiaActual.query('/FechaOperacion');
                 EXEC dbo.sp_CargarEmpleadoXML @inXmlData = @XMLInsertarEmpleados;
+            END
+
+            -- -----------------------------------------------------------------
+            -- BLOQUE INDEPENDIENTE: ELIMINAR EMPLEADOS (Transacción por empleado)
+            --------------------------------------------------------------------
+           
+            IF @XMLDiaActual.exist('/FechaOperacion/EliminarEmpleado') = 1
+            BEGIN
+                SET @XMLEliminarEmpleados = @XMLDiaActual.query('/FechaOperacion');
+                EXEC dbo.sp_EliminarEmpleadoXML @inXmlData = @XMLEliminarEmpleados;
+            END
+
+            -- -----------------------------------------------------------------
+            -- BLOQUE INDEPENDIENTE: ASOCIAR DEDUCCIONES POR EMPLEADOS (Transacción por empleado)
+            --------------------------------------------------------------------
+           
+            IF @XMLDiaActual.exist('/FechaOperacion/AsociaEmpleadoConDeduccion') = 1
+            BEGIN
+                SET @XMLAsociarDeducciones = @XMLDiaActual.query('/FechaOperacion');
+                EXEC dbo.sp_AsociarDeduccionXML @inXmlData = @XMLAsociarDeducciones;
+            END
+
+            -- -----------------------------------------------------------------
+            -- BLOQUE INDEPENDIENTE: DESASOCIAR DEDUCCIONES POR EMPLEADOS (Transacción por empleado)
+            --------------------------------------------------------------------
+           
+            IF @XMLDiaActual.exist('/FechaOperacion/DesasociaEmpleadoConDeduccion') = 1
+            BEGIN
+                SET @XMLDesasociarDeducciones = @XMLDiaActual.query('/FechaOperacion');
+                EXEC dbo.sp_DesasociarDeduccionXML @inXmlData = @XMLDesasociarDeducciones;
             END
 
             -- -----------------------------------------------------------------

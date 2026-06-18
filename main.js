@@ -281,11 +281,6 @@ if (tablaPlanilla1) {
                     <td>${emp.}</td>
                     <td>${emp.}</td>
                     <td>${emp.}</td>
-                    <td>${emp.}</td>
-                    <td>${emp.}</td>
-                    <td>${emp.}</td>
-                    
-
                 </tr>`;
     });
     */
