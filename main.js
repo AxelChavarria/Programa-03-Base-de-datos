@@ -1,5 +1,22 @@
 import { loginUsuario, cerrarSesion, obtenerListaEmpleados } from './funcionesBD.js';
 
+document.addEventListener("DOMContentLoaded", () => {
+
+    const admin = JSON.parse(sessionStorage.getItem("admin"))
+    const btnAtras = document.getElementById("btnAtras");
+
+    if (admin == "1" && (location.pathname.includes("empleado.html") || location.pathname.includes("planillaSemanal.html") || location.pathname.includes("planillaMensual.html") || location.pathname.includes("salarioBruto.html"))) {
+        btnAtras.style.display = "block";
+    }
+
+    if (btnAtras){
+        btnAtras.addEventListener("click", () => {
+            window.location.href = "lista.html";
+        });
+    }
+});
+
+
 //log in
 
 const formLogin = document.getElementById("form-login");
@@ -18,6 +35,7 @@ if (formLogin) {
         if (res.Codigo == 0){
             sessionStorage.setItem("usuario", JSON.stringify(res["UsuarioId"]));
             if (res.RolId == 1){
+                sessionStorage.setItem("admin", JSON.stringify("1"));
                 window.location.href = "lista.html";
             } else {
                 window.location.href = "empleado.html";
@@ -33,9 +51,15 @@ if (formLogin) {
 //cerrar sesión
 function cerrarSesionMain(){
 
-    const id = JSON.parse(sessionStorage.getItem("admin"))
+    const id = JSON.parse(sessionStorage.getItem("usuario"))
     cerrarSesion(id)
     sessionStorage.removeItem('usuario')
+    sessionStorage.removeItem('admin')
+    sessionStorage.removeItem('empleado')
+    const btnAtras = document.getElementById("btnAtras")
+    if (btnAtras){
+        btnAtras.style.display = "none";
+    }
     window.location.href='login.html'
 }
 
@@ -104,12 +128,26 @@ if (tablaEmpleados) {
                 </tr>`;
         });
         
+
+        
     });
 
-    
-    
-   
+    // eventos de los botones
+    document.querySelectorAll(".impersonar").forEach(btn => {
+
+        btn.addEventListener("click", function() {
+
+            const fila = this.closest("tr");
+            const idEmpleado = fila.dataset.id;
+
+            sessionStorage.setItem("empleado", JSON.stringify("idEmpleado"));
+            window.location.href = `empleado.html`;
+
+        });
+    });
+
 }
+
 
 function mostrarInfo(titulo, descripcion){
 
@@ -123,9 +161,8 @@ function mostrarInfo(titulo, descripcion){
 
 
 
-
-//tabla de planilla
-const tablaPlanilla = document.getElementById("tabla-planilla");
+//tabla de planilla semanal
+const tablaPlanilla = document.getElementById("tabla-planilla-semanal");
 if (tablaPlanilla) {
 
     //llamamos a la base de datos
@@ -227,4 +264,49 @@ if (tablaSalario) {
                 </tr>`;
     });
     */
+}
+
+//tabla de planilla mensual
+const tablaPlanilla1 = document.getElementById("tabla-planilla-mensual");
+if (tablaPlanilla1) {
+
+    //llamamos a la base de datos
+
+
+    //desplegamos la información
+    /*
+    informacion.forEach(emp => {  //pasar por las listas
+        tablaPlanilla1.innerHTML += `
+            <tr data-id="${emp.Id}">
+                    <td>${emp.}</td>
+                    <td>${emp.}</td>
+                    <td>${emp.}</td>
+                    <td>${emp.}</td>
+                    <td>${emp.}</td>
+                    <td>${emp.}</td>
+                    
+
+                </tr>`;
+    });
+    */
+
+    tablaPlanilla1.innerHTML = `
+            <tr data-id="1">
+                    <td>bruto</td>
+                    <td class="deducciones">
+                        deducciones
+                    </td>
+                    <td>neto</td>
+                </tr>`;
+
+    document.addEventListener("click", (e) => {
+
+    if (e.target.classList.contains("deducciones")) {
+
+        mostrarInfo("deduccion", "a");
+
+    }
+
+
+});
 }

@@ -2,44 +2,31 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Empleado</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio</title>
     <link rel="stylesheet" href="estilos.css">
 </head>
-
-<body class="body-empleado">
+<body >
     <header class="header">
-        <h1>Planilla</h1>
+        <button id="btnAtras" style="display:none;" class="form-btn">
+            Atrás
+        </button>
+        <h1>Menú principal</h1>
         <button class="form-btn" id="btnCerrarSesion">
             Cerrar sesión
         </button>
     </header>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Salario bruto</th>
-                <th>Total de deducciones</th>
-                <th>Salario neto</th>
-                <th>Horas ordinarias</th>
-                <th>Horas extra normales</th>
-                <th>Horas extras dobles</th>
-            </tr> 
-        </thead>
+   <div class="form-empleado">
 
-        <tbody id="tabla-planilla">
-        </tbody>
-   </table>
+        <p class="title">Planillas</p>
+        <div class="form">
+            <button class="form-btn"  onclick="window.location.href='planillaSemanal.html'">Planilla Semanal</button>
+            <button class="form-btn"  onclick="window.location.href='planillaMensual.html'">Planilla Mensual</button>
+        </div>
 
-    <div id="fondo"></div>
-
-    <div id="cuadro">
-        <h3>Información</h3>
-        <p id="texto"></p>
-        <button id="btn-cerrar">Cerrar</button>
     </div>
 
-    
-    <script type="module" src="main.js"></script>
-
+    <script type="module" src="main.js" defer></script>
 </body>
 </html>
