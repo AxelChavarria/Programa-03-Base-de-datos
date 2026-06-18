@@ -2,18 +2,17 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Salario bruto</title>
+    <title>Empleado</title>
     <link rel="stylesheet" href="estilos.css">
 </head>
 
-
-<body>
-
+<body class="body-empleado">
     <header class="header">
         <button id="btnAtras" style="display:none;" class="form-btn">
             Atrás
         </button>
-        <h1>Salario bruto</h1>
+        <h1>Planilla semanal
+        </h1>
         <button class="form-btn" id="btnCerrarSesion">
             Cerrar sesión
         </button>
@@ -22,22 +21,28 @@
     <table>
         <thead>
             <tr>
-                <th>Día</th>
-                <th>Hora de entrada</th>
-                <th>Hora de salida</th>
+                <th>Salario bruto</th>
+                <th>Total de deducciones</th>
+                <th>Salario neto</th>
                 <th>Horas ordinarias</th>
-                <th>Monto</th>
-                <th>Horas extras normales</th>
-                <th>Monto</th>
+                <th>Horas extra normales</th>
                 <th>Horas extras dobles</th>
-                <th>Monto</th>
             </tr> 
         </thead>
 
-        <tbody id="tabla-salario">
+        <tbody id="tabla-planilla-semanal">
         </tbody>
    </table>
 
+    <div id="fondo"></div>
+
+    <div id="cuadro">
+        <h3>Información</h3>
+        <p id="texto"></p>
+        <button id="btn-cerrar">Cerrar</button>
+    </div>
+
+    
     <script type="module" src="main.js"></script>
 
 </body>
