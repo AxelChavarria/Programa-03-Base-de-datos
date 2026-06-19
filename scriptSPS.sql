@@ -284,7 +284,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- 1. Tabla variable para extraer limpiamente los datos del XML
+    -- Tabla variable p¿ara datos del XML
     DECLARE @EmpleadosAProcesar TABLE (
         Secuencia INT IDENTITY(1,1) PRIMARY KEY,
         ValorDocumentoIdentidad VARCHAR(50),
@@ -296,7 +296,7 @@ BEGIN
         FechaContratacion DATE
     );
 
-    -- Variables para el ciclo de procesamiento individual
+    -- Variables para el ciclo
     DECLARE @Iterador INT = 1;
     DECLARE @MaxIterador INT;
     DECLARE @IdUsuarioActual INT;
@@ -308,7 +308,7 @@ BEGIN
             @vUser VARCHAR(50), @vPass VARCHAR(100), @vTipo INT, @vFecha DATE;
 
     BEGIN TRY
-        -- 2. Volcar el XML de forma directa a la tabla en memoria (Operación de lectura, no ocupa Tx)
+        -- Pasar el xml a la tabla variable
         INSERT INTO @EmpleadosAProcesar (ValorDocumentoIdentidad, Nombre, Puesto, Username, PasswordHash, TipoUsuario, FechaContratacion)
         SELECT
             T.Node.value('@ValorDocumentoIdentidad', 'VARCHAR(50)'),
@@ -322,46 +322,45 @@ BEGIN
 
         SELECT @MaxIterador = COUNT(*) FROM @EmpleadosAProcesar;
 
-        -- 3. Iterar cada empleado de forma individual y transaccional
+       -- Iterar cada empleado
         WHILE @Iterador <= @MaxIterador
         BEGIN
-            -- Extraer datos del empleado actual
+            
             SELECT 
                 @vCedula = ValorDocumentoIdentidad, @vNombre = Nombre, @vPuesto = Puesto,
                 @vUser = Username, @vPass = PasswordHash, @vTipo = TipoUsuario, @vFecha = FechaContratacion
             FROM @EmpleadosAProcesar
             WHERE Secuencia = @Iterador;
 
-            -- Mapear el puesto por nombre
+            
             SELECT @IdPuestoActual = Id FROM dbo.Puesto WHERE Nombre = @vPuesto;
 
-            -- !!! AQUÍ EMPIEZA LA ÚNICA TRANSACCIÓN POR EMPLEADO !!!
-            BEGIN TRANSACTION;
+            
+            BEGIN TRANSACTION; --Transacción para cada empleado (es atómico)
             BEGIN TRY
                 
-                -- Validar que el puesto exista y que el empleado o usuario no estén duplicados
+                -- Validaciones
                 IF @IdPuestoActual IS NOT NULL 
                    AND NOT EXISTS (SELECT 1 FROM dbo.Usuario WHERE Username = @vUser)
                    AND NOT EXISTS (SELECT 1 FROM dbo.Empleado WHERE ValorDocumentoIdentidad = @vCedula)
                 BEGIN
                     
-                    -- Calcular correlativo manual para la tabla Usuario
+                    
                     SELECT @IdUsuarioActual = ISNULL(MAX(Id), 0) + 1 FROM dbo.Usuario;
 
-                    -- Forzar tipo de usuario válido si viene en 0 por el XML (Debe ser 1 o 2 por el CHECK)
                     IF @vTipo NOT IN (1, 2) SET @vTipo = 2;
 
-                    -- Inserción 1: Usuario
+                    -- Inserciones
                     INSERT INTO dbo.Usuario (Id, Username, PasswordHash, Tipo)
                     VALUES (@IdUsuarioActual, @vUser, @vPass, @vTipo);
 
-                    -- Inserción 2: Empleado
+                   
                     INSERT INTO dbo.Empleado (IdPuesto, ValorDocumentoIdentidad, Nombre, FechaContratacion, SaldoVacaciones, EsActivo, IdUsuario)
                     VALUES (@IdPuestoActual, @vCedula, @vNombre, @vFecha, 0.00, 1, @IdUsuarioActual);
 
                     SET @IdEmpleadoActual = SCOPE_IDENTITY();
 
-                    -- Inserción 3: Registro de Bitácora Individual estructurado en JSON (Requerimiento R07)
+                    
                     DECLARE @JsonBitacora VARCHAR(MAX) = (
                         SELECT @IdEmpleadoActual AS [Empleado.Id], @vNombre AS [Empleado.Nombre], @vCedula AS [Empleado.Cedula]
                         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
@@ -370,18 +369,18 @@ BEGIN
                     INSERT INTO dbo.BitacoraEvento (idTipoEvento, Descripcion, IdPostByUser, PostInIP, PostTime)
                     VALUES (5, @JsonBitacora, 1, '127.0.0.1', GETDATE());
 
-                    -- Guardamos los cambios únicamente de ESTE empleado
+                    -- Commit de esa inserción individual
                     COMMIT TRANSACTION;
                 END 
                 ELSE
                 BEGIN
-                    -- Si hay duplicados o el puesto no existe, cancelamos SOLAMENTE este registro
+    
                     ROLLBACK TRANSACTION;
                 END
 
             END TRY
             BEGIN CATCH
-                -- Si falla la inserción interna de este empleado, revertimos su transacción individual
+                -- Si falla una, no se inserta ninguna
                 IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
 
                 INSERT INTO dbo.DBError (UserName, Number, State, Severity, Line, [Procedure], Message)
@@ -395,7 +394,7 @@ BEGIN
 
     END TRY
     BEGIN CATCH
-        -- Captura fallas estructurales graves externas al bucle (ej: XML corrupto)
+        
         SELECT -1 AS Codigo, 'Error crítico estructural al procesar la carga XML: ' + ERROR_MESSAGE() AS Mensaje;
     END CATCH
 END;
@@ -436,10 +435,6 @@ BEGIN
         -- Procesar uno por uno
         WHILE @Iterador <= @MaxIterador
         BEGIN
-        /*
-        Mensaje 102, nivel 15, estado 1, procedimiento sp_EliminarEmpleadoXML, línea 66 [línea de inicio de lote 443]
-Incorrect syntax near 'WITHOUT'.
-        */
             SELECT 
                 @vCedula = ValorDocumentoIdentidad
             FROM @EmpleadosAEliminar
@@ -524,7 +519,7 @@ END;
 
 
 
-
+-- Función auxiliar para el manejo de los jueves (iniciar y cerrar semanas y meses)
 
 CREATE FUNCTION dbo.fn_ContarJuevesEnMes (@FechaInicio DATE, @FechaFin DATE)
 RETURNS INT
@@ -558,14 +553,12 @@ BEGIN
     DECLARE @FinMes DATE = EOMONTH(@pFechaActual);
     DECLARE @JuevesDelMes INT;
 
-    -- =================================================================
-    -- 1. CONTROL DE MES PLANILLA
-    -- =================================================================
+  --  Mes
     SELECT TOP 1 @IdMesActual = Id FROM dbo.MesPlanilla WHERE @pFechaActual BETWEEN FechaInicio AND FechaFin;
 
     IF @IdMesActual IS NULL
     BEGIN
-        -- REGLA DE CIERRE: Antes de abrir el nuevo, cerramos el mes anterior
+        --Antes de abrir el nuevo mes, cerramos el anterior
         UPDATE dbo.MesPlanilla SET EsCerrado = 1 WHERE EsCerrado = 0;
 
         INSERT INTO dbo.MesPlanilla (FechaInicio, FechaFin, EsCerrado)
@@ -574,14 +567,12 @@ BEGIN
         SET @IdMesActual = SCOPE_IDENTITY();
     END;
 
-    -- =================================================================
-    -- 2. CONTROL DE SEMANA PLANILLA
-    -- =================================================================
+    -- Semana 
     SELECT TOP 1 @IdSemanaActual = Id FROM dbo.SemanaPlanilla WHERE @pFechaActual BETWEEN FechaInicio AND FechaFin;
 
     IF @IdSemanaActual IS NULL
     BEGIN
-        -- REGLA DE CIERRE: Antes de abrir la nueva semana, cerramos la anterior
+        -- Antes de abrir la nueva semana, cerramos la anterior
         UPDATE dbo.SemanaPlanilla SET EsCerrado = 1 WHERE EsCerrado = 0;
 
         SET @JuevesDelMes = dbo.fn_ContarJuevesEnMes(@InicioMes, @FinMes);
@@ -778,7 +769,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- 1. Tabla variable para extraer los datos del fragmento XML
+    -- Tabla variable para extraer los datos del fragmento XML
     DECLARE @JornadasAProcesar TABLE (
         Secuencia INT IDENTITY(1,1) PRIMARY KEY,
         ValorDocumentoIdentidad VARCHAR(50),
@@ -797,7 +788,7 @@ BEGIN
     DECLARE @vCedula VARCHAR(50), @vJornada VARCHAR(50), @vInicioSemana DATE;
 
     BEGIN TRY
-        -- 2. Volcar los nodos <AsignarJornada> a la tabla en memoria
+        -- Meter los nodos del xml a la tabla variable
         INSERT INTO @JornadasAProcesar (ValorDocumentoIdentidad, NombreJornada, InicioSemana)
         SELECT
             T.Node.value('@ValorDocumentoIdentidad', 'VARCHAR(50)'),
@@ -817,29 +808,28 @@ BEGIN
             FROM @JornadasAProcesar
             WHERE Secuencia = @Iterador;
 
-            -- Mapear los IDs correspondientes relacionales
+            
             SELECT @IdEmpleadoActual = Id FROM dbo.Empleado WHERE ValorDocumentoIdentidad = @vCedula AND EsActivo = 1;
             SELECT @IdTipoJornadaActual = Id FROM dbo.TipoJornada WHERE Nombre = @vJornada;
             
-            -- Buscamos la semana de planilla correspondiente a esa fecha de inicio
+           
             SELECT @IdSemanaActual = Id FROM dbo.SemanaPlanilla WHERE @vInicioSemana BETWEEN FechaInicio AND FechaFin;
 
-            -- Iniciamos transacción por cada asignación de turno individual
+            
             
             BEGIN TRY
 
-                -- Validaciones de integridad
+                
                 IF @IdEmpleadoActual IS NOT NULL AND @IdTipoJornadaActual IS NOT NULL AND @IdSemanaActual IS NOT NULL
                 BEGIN
                     
-                    -- Usamos un MERGE o un condicional para evitar duplicar el turno si ya se guardó 
-                    -- (Tu tabla tiene un UNIQUE por Empleado y Semana)
+                    
                     IF NOT EXISTS (SELECT 1 FROM dbo.CalendarioJornadaEmpleado WHERE IdEmpleado = @IdEmpleadoActual AND IdSemanaPlanilla = @IdSemanaActual)
                     BEGIN
                         INSERT INTO dbo.CalendarioJornadaEmpleado (IdEmpleado, IdSemanaPlanilla, IdTipoJornada)
                         VALUES (@IdEmpleadoActual, @IdSemanaActual, @IdTipoJornadaActual);
 
-                        -- Inserción en Bitácora en formato JSON (Requerimiento R07)
+                        -- Inserción en Bitácora 
                         DECLARE @JsonBitacora VARCHAR(MAX) = (
                             SELECT 
                                 @IdEmpleadoActual AS [Calendario.IdEmpleado], 
@@ -848,7 +838,7 @@ BEGIN
                             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
                         );
 
-                        -- Tipo de Evento 7 = Asignación de Jornada / Horario
+                       
                         INSERT INTO dbo.BitacoraEvento (idTipoEvento, Descripcion, IdPostByUser, PostInIP, PostTime)
                         VALUES (7, @JsonBitacora, 1, '127.0.0.1', GETDATE());
                     END
@@ -1060,7 +1050,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- 1. Tabla variable para extraer los datos del fragmento XML
+    -- Tabla variable para el xml
     DECLARE @AsistenciasAProcesar TABLE (
         Secuencia INT IDENTITY(1,1) PRIMARY KEY,
         ValorDocumentoIdentidad VARCHAR(50),
@@ -1074,12 +1064,12 @@ BEGIN
     DECLARE @IdEmpleadoActual INT;
     DECLARE @IdSemanaActual INT;
 
-    -- Variables de lectura por fila
+    
     DECLARE @vCedula VARCHAR(50), @vEntrada DATETIME, @vSalida DATETIME;
     DECLARE @HorasCalculadas DECIMAL(5,2);
-    DECLARE @vFechaPura DATE; -- <-- Nueva variable para la columna obligatoria
+    DECLARE @vFechaPura DATE; 
 
-    -- 2. Volcar los nodos <MarcaAsistencia> a la tabla en memoria
+    -- Meter los nodos a tabla en memoria
     INSERT INTO @AsistenciasAProcesar (ValorDocumentoIdentidad, HoraEntrada, HoraSalida)
     SELECT
         T.Node.value('@ValorDocumentoIdentidad', 'VARCHAR(50)'),
@@ -1089,7 +1079,7 @@ BEGIN
 
     SELECT @MaxIterador = COUNT(*) FROM @AsistenciasAProcesar;
 
-    -- 3. Iterar registro por registro
+    -- Iterar 
     WHILE @Iterador <= @MaxIterador
     BEGIN
         SELECT 
@@ -1099,14 +1089,13 @@ BEGIN
         FROM @AsistenciasAProcesar
         WHERE Secuencia = @Iterador;
 
-        -- Extraemos solo la FECHA (sin horas) para alimentar tu columna mandatoria
+        
         SET @vFechaPura = CAST(@vEntrada AS DATE);
 
-        -- Mapear el ID del empleado y la semana activa de planilla
         SELECT @IdEmpleadoActual = Id FROM dbo.Empleado WHERE ValorDocumentoIdentidad = @vCedula AND EsActivo = 1;
         SELECT @IdSemanaActual = Id FROM dbo.SemanaPlanilla WHERE @vFechaPura BETWEEN FechaInicio AND FechaFin;
 
-        -- 4. VALIDACIONES CRÍTICAS
+       
         IF @IdEmpleadoActual IS NULL
         BEGIN
             DECLARE @ErrEmpleado VARCHAR(150) = CONCAT('Error en Asistencia: El empleado con cédula ', @vCedula, ' no existe o está inactivo.');
@@ -1121,11 +1110,11 @@ BEGIN
             RETURN;
         END
 
-        -- 5. INSERCIÓN CORREGIDA: Agregamos la columna 'Fecha' que pide tu tabla
+        
         INSERT INTO dbo.Asistencia (IdEmpleado, IdSemanaPlanilla, Fecha, HoraEntrada, HoraSalida)
         VALUES (@IdEmpleadoActual, @IdSemanaActual, @vFechaPura, @vEntrada, @vSalida);
 
-        -- 6. Cálculo para la bitácora JSON (R07)
+        
         SET @HorasCalculadas = DATEDIFF(MINUTE, @vEntrada, @vSalida) / 60.0;
 
         DECLARE @JsonBitacora VARCHAR(MAX) = (
@@ -1146,6 +1135,7 @@ BEGIN
     END;
 END;
 ---------------------------------
+-- Función para obtener el límite de horas ordinarias según el tipo de jornada (diurno, vespertino, nocturno)
 CREATE OR ALTER FUNCTION dbo.fn_ObtenerLimiteHorasJornada (
     @pNombreJornada VARCHAR(50)
 )
@@ -1156,7 +1146,7 @@ BEGIN
         WHEN @pNombreJornada = 'Diurno' THEN 8
         WHEN @pNombreJornada = 'Vespertino' THEN 7
         WHEN @pNombreJornada = 'Nocturno' THEN 6
-        ELSE 8 -- Por defecto
+        ELSE 8 
     END;
 END;
 
@@ -1169,14 +1159,14 @@ BEGIN
 
     DECLARE @IdSemanaActual INT;
     
-    -- 1. Identificar la semana abierta que se va a cerrar hoy jueves
+    -- Identificar la semana abierta que se va a cerrar 
     SELECT TOP 1 @IdSemanaActual = Id 
     FROM dbo.SemanaPlanilla 
     WHERE @pFechaActual BETWEEN FechaInicio AND FechaFin AND EsCerrado = 0;
 
     IF @IdSemanaActual IS NULL RETURN;
 
-    -- 2. Tabla variable para procesar los totales de cada empleado en esta semana
+    -- Tabla variable para procesar los totales de cada empleado en esta semana
     DECLARE @CalculoEmpleados TABLE (
         IdEmpleado INT,
         IdTipoJornada INT,
@@ -1190,7 +1180,7 @@ BEGIN
         DeduccionCCSS DECIMAL(12,2)
     );
 
-    -- 3. Agrupación matemática y cálculo directo del Salario Bruto y CCSS
+    -- Agrupación y cálculo del Salario Bruto y CCSS
     INSERT INTO @CalculoEmpleados (
         IdEmpleado, IdTipoJornada, HorasOrdinarias, HorasExtrasNormales, HorasExtrasDobles, 
         MontoHorasOrdinarias, MontoHorasExtrasNormales, MontoHorasExtrasDobles, SalarioBruto, DeduccionCCSS
@@ -1255,16 +1245,13 @@ BEGIN
     GROUP BY E.Id, CJE.IdTipoJornada, P.SalarioxHora;
 
 
-    -- =================================================================
-    -- 4. INSERCIÓN MASIVA EN TABLA DE DEDUCCIONES SEMANALES
-    -- =================================================================
-    
-    -- A. CCSS Obligatoria
+   -- Deducciones semanales
+   
     INSERT INTO dbo.DeduccionSemanalXEmpleado (IdEmpleado, IdSemanaPlanilla, Detalle, Monto, IdTipoDeduccion)
     SELECT IdEmpleado, @IdSemanaActual, 'CCSS Deducción Obligatoria (10.67%)', DeduccionCCSS, 1
     FROM @CalculoEmpleados;
 
-    -- B. Deducciones Voluntarias
+    -- Deducciones Voluntarias
     INSERT INTO dbo.DeduccionSemanalXEmpleado (IdEmpleado, IdSemanaPlanilla, Detalle, Monto, IdTipoDeduccion)
     SELECT 
         C.IdEmpleado, 
@@ -1276,9 +1263,8 @@ BEGIN
     INNER JOIN dbo.DeduccionXEmpleado DXE ON C.IdEmpleado = DXE.IdEmpleado AND DXE.EsActiva = 1;
 
 
-    -- =================================================================
-    -- 5. INSERCIÓN MASIVA EN LA PLANILLA SEMANAL FINAL
-    -- =================================================================
+    -- Planilla semanal por empleado FINAL
+
     INSERT INTO dbo.PlanillaSemXEmpleado (
         IdEmpleado, IdSemanaPlanilla, SalarioBruto, TotalDeducciones, SalarioNeto, 
         HorasOrdinarias, HorasExtrasNormales, HorasExtrasDobles, IdTipoJornada
@@ -1300,34 +1286,28 @@ BEGIN
             SUM(CASE WHEN DXE.PorcentajeOMonto > 1.00 THEN DXE.PorcentajeOMonto ELSE C2.SalarioBruto * DXE.PorcentajeOMonto END) AS MontoVoluntario
         FROM @CalculoEmpleados C2
         INNER JOIN dbo.DeduccionXEmpleado DXE ON C2.IdEmpleado = DXE.IdEmpleado AND DXE.EsActiva = 1
-        GROUP BY C2.IdEmpleado -- <-- Eliminado el ';' que rompía la sintaxis aquí
+        GROUP BY C2.IdEmpleado 
     ) DV ON C.IdEmpleado = DV.IdEmpleado;
 
 END;
 
 -----------------------------------
 CREATE OR ALTER PROCEDURE dbo.sp_CierreMensualPlanilla
-    @pFechaActual DATE -- Se mantiene por compatibilidad, pero la lógica ahora es 100% relacional
+    @pFechaActual DATE 
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- =================================================================
-    -- 1. CONSOLIDAR PLANILLA MENSUAL (Basado en la Planilla Semanal)
-    -- =================================================================
-    -- El truco está en agrupar por SP.IdMesPlanilla. Así, si hay datos de la semana 
-    -- que pertenecen al Mes 1 y otros al Mes 2, se calcularán ambos por separado.
     INSERT INTO dbo.PlanillaMesXEmpleado (IdEmpleado, IdMesPlanilla, SalarioBrutoMensual, DeduccionesMensuales, SalarioNetoMensual)
     SELECT 
         PSE.IdEmpleado,
-        SP.IdMesPlanilla, -- <--- Tomamos el ID del mes directamente de la semana
+        SP.IdMesPlanilla, 
         SUM(PSE.SalarioBruto) AS SalarioBrutoMensual,
         SUM(PSE.TotalDeducciones) AS DeduccionesMensuales,
         SUM(PSE.SalarioNeto) AS SalarioNetoMensual
     FROM dbo.PlanillaSemXEmpleado PSE
     INNER JOIN dbo.SemanaPlanilla SP ON PSE.IdSemanaPlanilla = SP.Id
     WHERE NOT EXISTS (
-        -- Evitamos duplicados por si el SP se ejecuta dos veces
         SELECT 1 
         FROM dbo.PlanillaMesXEmpleado PME 
         WHERE PME.IdEmpleado = PSE.IdEmpleado AND PME.IdMesPlanilla = SP.IdMesPlanilla
@@ -1335,22 +1315,19 @@ BEGIN
     GROUP BY PSE.IdEmpleado, SP.IdMesPlanilla;
 
 
-    -- =================================================================
-    -- 2. CONSOLIDAR DEDUCCIONES X EMPLEADO X MES (Basado en la Semanal)
-    -- =================================================================
-    -- Hacemos exactamente lo mismo: sumamos los rebajos semanales agrupando por 
-    -- el mes correspondiente de la semana, respetando tu restricción UNIQUE.
+    -- Deducciones de empleado por mes (basado en semanal)
+
     INSERT INTO dbo.DeduccionesXEmpleadoXMes (IdEmpleado, IdMesPlanilla, IdTipoDeduccion, MontoAcumulado)
     SELECT 
         DSE.IdEmpleado,
-        SP.IdMesPlanilla, -- <--- El mes real al que pertenece el rebajo semanal
+        SP.IdMesPlanilla, 
         DSE.IdTipoDeduccion, 
         SUM(DSE.Monto) AS MontoAcumulado
     FROM dbo.DeduccionSemanalXEmpleado DSE
     INNER JOIN dbo.SemanaPlanilla SP ON DSE.IdSemanaPlanilla = SP.Id
     WHERE DSE.IdTipoDeduccion IS NOT NULL
       AND NOT EXISTS (
-          -- Evitamos violar el UNIQUE (IdEmpleado, IdMesPlanilla, IdTipoDeduccion)
+          
           SELECT 1 
           FROM dbo.DeduccionesXEmpleadoXMes DXM 
           WHERE DXM.IdEmpleado = DSE.IdEmpleado 
@@ -1360,10 +1337,8 @@ BEGIN
     GROUP BY DSE.IdEmpleado, SP.IdMesPlanilla, DSE.IdTipoDeduccion;
 
 
-    -- =================================================================
-    -- 3. MOTOR DE VACACIONES
-    -- =================================================================
-    -- Acumula los 1.25 días a los empleados que registraron actividad en el mes
+ 
+    -- Se le añade 1.25 si tienen actividad mensual
     UPDATE E
     SET E.SaldoVacaciones = ISNULL(E.SaldoVacaciones, 0) + 1.25
     FROM dbo.Empleado E
@@ -1374,10 +1349,7 @@ BEGIN
       );
 
 
-    -- =================================================================
-    -- 4. MARCAR MESES COMO CERRADOS
-    -- =================================================================
-    -- Por orden, cerramos los meses que ya tienen datos procesados en la planilla mensual
+    -- Cerrar mes planilla
     UPDATE MP
     SET MP.EsCerrado = 1
     FROM dbo.MesPlanilla MP
@@ -1417,7 +1389,7 @@ BEGIN
     DECLARE @XMLDesasociarDeducciones XML;
 
     BEGIN TRY
-        -- 1. Extraer y ordenar los días cronológicamente
+        -- Extraer y ordenar los días cronológicamente
         INSERT INTO @DiasSimulacion (Fecha, NodoFecha)
         SELECT 
             T.Node.value('@Fecha', 'DATE'),
@@ -1427,13 +1399,12 @@ BEGIN
 
         SELECT @MaxIterador = COUNT(*) FROM @DiasSimulacion;
 
-        -- 2. Ciclo principal por día
+        -- Ciclo principal por día
         WHILE @Iterador <= @MaxIterador
         BEGIN
             SELECT @FechaActual = Fecha, @XMLDiaActual = NodoFecha FROM @DiasSimulacion WHERE Secuencia = @Iterador;
 
             -- -----------------------------------------------------------------
-            -- BLOQUE INDEPENDIENTE: INSERTAR EMPLEADOS (Transacción por empleado)
            
             IF @XMLDiaActual.exist('/FechaOperacion/InsertarEmpleado') = 1
             BEGIN
@@ -1442,7 +1413,6 @@ BEGIN
             END
 
             -- -----------------------------------------------------------------
-            -- BLOQUE INDEPENDIENTE: ELIMINAR EMPLEADOS (Transacción por empleado)
             --------------------------------------------------------------------
            
             IF @XMLDiaActual.exist('/FechaOperacion/EliminarEmpleado') = 1
@@ -1452,7 +1422,6 @@ BEGIN
             END
 
             -- -----------------------------------------------------------------
-            -- BLOQUE INDEPENDIENTE: ASOCIAR DEDUCCIONES POR EMPLEADOS (Transacción por empleado)
             --------------------------------------------------------------------
            
             IF @XMLDiaActual.exist('/FechaOperacion/AsociaEmpleadoConDeduccion') = 1
@@ -1462,7 +1431,6 @@ BEGIN
             END
 
             -- -----------------------------------------------------------------
-            -- BLOQUE INDEPENDIENTE: DESASOCIAR DEDUCCIONES POR EMPLEADOS (Transacción por empleado)
             --------------------------------------------------------------------
            
             IF @XMLDiaActual.exist('/FechaOperacion/DesasociaEmpleadoConDeduccion') = 1
@@ -1472,43 +1440,39 @@ BEGIN
             END
 
             -- -----------------------------------------------------------------
-            -- BLOQUE UNIFICADO: ASISTENCIAS, JORNADAS Y CIERRES (Una sola Tx de BD)
             -- -----------------------------------------------------------------
             BEGIN TRANSACTION;
             BEGIN TRY
                 
-                -- Inciso 3: Hacer cierre y apertura de mes / semana (Antes de procesar el día)
-                -- Aquí se evalúa de forma transaccional si toca abrir/cerrar periodos
+                -- Cierre y apertura de mes / semana antes de procesar el día
+
                 EXEC dbo.sp_ControlTiempoYPlanilla @pFechaActual = @FechaActual;
 
-                -- Inciso 1: Procesar asistencias del día
+                -- Procesar asistencias del día
                 IF @XMLDiaActual.exist('/FechaOperacion/MarcaAsistencia') = 1
                 BEGIN
                     SET @XMLAsistencias = @XMLDiaActual.query('/FechaOperacion');
-                    -- IMPORTANTE: Quitarle el BEGIN/COMMIT TX interno a este SP para que herede esta Tx global
                     EXEC dbo.sp_CargarAsistenciasXML @inXmlData = @XMLAsistencias;
                 END
 
-                -- Inciso 2: Procesar nuevas jornadas
+                -- Procesar nuevas jornadas
                 IF @XMLDiaActual.exist('/FechaOperacion/AsignarJornada') = 1
                 BEGIN
                     SET @XMLAsignarJornadas = @XMLDiaActual.query('/FechaOperacion');
-                    -- IMPORTANTE: Quitarle el BEGIN/COMMIT TX interno a este SP para que herede esta Tx global
                     EXEC dbo.sp_CargarJornadasXML @inXmlData = @XMLAsignarJornadas;
                 END
 
-                -- Inciso 4: Si es JUEVES, se ejecuta el cierre matemático de la planilla semanal
+                --Si es JUEVES, se ejecuta el cierre matemático de la planilla semanal
                
             IF DATEPART(WEEKDAY, @FechaActual) = 5 -- Jueves
             BEGIN
-        -- Validamos que no sea el día inicial de la simulación consultando si ya existen asistencias previas
+    
             IF EXISTS (SELECT 1 FROM dbo.Asistencia)
                     BEGIN
-                        -- 1. Ejecutamos los cálculos y rebajos semanales
+                        -- Ejecutamos los cálculos y rebajos semanales
                         EXEC dbo.sp_CierreSemanalPlanilla @pFechaActual = @FechaActual;
 
-                        -- 2. Evaluamos si el mes calendario también se acabó hoy para consolidar el mes y subir vacaciones
-                        -- (Si el próximo día de simulación cambia de mes, ejecutamos el cierre mensual)
+                        -- Si el més también se cerró, realizar los cálculos
                         IF MONTH(@FechaActual) <> MONTH(DATEADD(DAY, 1, @FechaActual))
                         BEGIN
                             EXEC dbo.sp_CierreMensualPlanilla @pFechaActual = @FechaActual;
@@ -1517,7 +1481,7 @@ BEGIN
                END
                
 
-                -- Si todo el día corrió perfectamente, consolidamos el bloque de 37 puntos
+                -- Si todo el día corrió perfectamente
                 COMMIT TRANSACTION;
 
             END TRY
@@ -1542,17 +1506,14 @@ BEGIN
 END;
 
 
-SELECT * FROM Empleado
-EXEC sp_ConsultarTodoSemanalEmpleado 186
+
 CREATE OR ALTER PROCEDURE dbo.sp_ConsultarTodoSemanalEmpleado
     @pIdEmpleado INT
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- =================================================================
-    -- RESULTADO 1: Listado de Planillas Semanales
-    -- =================================================================
+  -- Obtener toda la información semanal del empleado, incluyendo planilla, deducciones y asistencias detalladas
     SELECT 
         PSE.Id AS IdPlanillaSemanal,
         PSE.IdSemanaPlanilla,
@@ -1570,25 +1531,22 @@ BEGIN
     WHERE PSE.IdEmpleado = @pIdEmpleado
     ORDER BY SP.FechaInicio DESC;
 
-    -- =================================================================
-    -- RESULTADO 2: Detalle de Deducciones Semanales
-    -- =================================================================
+-- Detalles de las deducciones semanales
     SELECT 
         DSE.IdSemanaPlanilla,
         DSE.IdTipoDeduccion,
         DSE.Detalle AS NombreDeduccion,
         CASE 
-            WHEN DSE.IdTipoDeduccion = 1 THEN 10.67
-            ELSE ISNULL(DXE.PorcentajeOMonto * 100, 0) 
+            WHEN DSE.IdTipoDeduccion = 1 THEN 10.67 -- CCSS siempre es porcentual
+            WHEN DXE.PorcentajeOMonto <= 1.00 THEN ISNULL(DXE.PorcentajeOMonto * 100, 0) -- Es un porcentaje 
+            ELSE 0 -- Es un monto fijo, por ende el porcentaje aplicado es 0
         END AS PorcentajeAplicado,
         DSE.Monto
     FROM dbo.DeduccionSemanalXEmpleado DSE
     LEFT JOIN dbo.DeduccionXEmpleado DXE ON DSE.IdEmpleado = DXE.IdEmpleado AND DSE.IdTipoDeduccion = DXE.IdTipoDeduccion
     WHERE DSE.IdEmpleado = @pIdEmpleado;
 
-    -- =================================================================
-    -- RESULTADO 3: Desglose Diario de Asistencias y Rubros en Colones
-    -- =================================================================
+-- Desglose detallado de las asistencias, horas y montos por día
     DECLARE @SalarioHora DECIMAL(10,2);
     SELECT @SalarioHora = P.SalarioxHora 
     FROM dbo.Empleado E 
@@ -1600,21 +1558,14 @@ BEGIN
         CAST(A.HoraEntrada AS DATE) AS Fecha,
         CONVERT(VARCHAR(5), A.HoraEntrada, 108) AS HoraEntrada,
         CONVERT(VARCHAR(5), A.HoraSalida, 108) AS HoraSalida,
-        
-        -- Cálculo de Horas Ordinarias y su Monto
         CASE WHEN F.Fecha IS NULL AND (DATEDIFF(MINUTE, A.HoraEntrada, A.HoraSalida) / 60.0) <= dbo.fn_ObtenerLimiteHorasJornada(TJ.Nombre) THEN (DATEDIFF(MINUTE, A.HoraEntrada, A.HoraSalida) / 60.0)
              WHEN F.Fecha IS NULL AND (DATEDIFF(MINUTE, A.HoraEntrada, A.HoraSalida) / 60.0) > dbo.fn_ObtenerLimiteHorasJornada(TJ.Nombre) THEN dbo.fn_ObtenerLimiteHorasJornada(TJ.Nombre) ELSE 0 END AS HorasOrdinarias,
         (CASE WHEN F.Fecha IS NULL AND (DATEDIFF(MINUTE, A.HoraEntrada, A.HoraSalida) / 60.0) <= dbo.fn_ObtenerLimiteHorasJornada(TJ.Nombre) THEN (DATEDIFF(MINUTE, A.HoraEntrada, A.HoraSalida) / 60.0)
               WHEN F.Fecha IS NULL AND (DATEDIFF(MINUTE, A.HoraEntrada, A.HoraSalida) / 60.0) > dbo.fn_ObtenerLimiteHorasJornada(TJ.Nombre) THEN dbo.fn_ObtenerLimiteHorasJornada(TJ.Nombre) ELSE 0 END) * @SalarioHora AS MontoOrdinario,
-
-        -- Cálculo de Horas Extras Normales y su Monto
         CASE WHEN F.Fecha IS NULL AND (DATEDIFF(MINUTE, A.HoraEntrada, A.HoraSalida) / 60.0) > dbo.fn_ObtenerLimiteHorasJornada(TJ.Nombre) THEN (DATEDIFF(MINUTE, A.HoraEntrada, A.HoraSalida) / 60.0) - dbo.fn_ObtenerLimiteHorasJornada(TJ.Nombre) ELSE 0 END AS HorasExtrasNormales,
         (CASE WHEN F.Fecha IS NULL AND (DATEDIFF(MINUTE, A.HoraEntrada, A.HoraSalida) / 60.0) > dbo.fn_ObtenerLimiteHorasJornada(TJ.Nombre) THEN (DATEDIFF(MINUTE, A.HoraEntrada, A.HoraSalida) / 60.0) - dbo.fn_ObtenerLimiteHorasJornada(TJ.Nombre) ELSE 0 END) * @SalarioHora * 1.5 AS MontoExtraNormal,
-
-        -- Cálculo de Horas Feriadas (Dobles) y su Monto
         CASE WHEN F.Fecha IS NOT NULL THEN (DATEDIFF(MINUTE, A.HoraEntrada, A.HoraSalida) / 60.0) ELSE 0 END AS HorasExtrasDobles,
         (CASE WHEN F.Fecha IS NOT NULL THEN (DATEDIFF(MINUTE, A.HoraEntrada, A.HoraSalida) / 60.0) ELSE 0 END) * @SalarioHora * 2.0 AS MontoExtraDoble
-
     FROM dbo.Asistencia A
     INNER JOIN dbo.SemanaPlanilla SP ON A.IdSemanaPlanilla = SP.Id
     INNER JOIN dbo.CalendarioJornadaEmpleado CJE ON A.IdEmpleado = CJE.IdEmpleado AND CJE.IdSemanaPlanilla = SP.Id
@@ -1623,7 +1574,7 @@ BEGIN
     WHERE A.IdEmpleado = @pIdEmpleado
     ORDER BY A.HoraEntrada ASC;
 END;
-
+-----------------------------------------------------------
 
 EXEC sp_ConsultarTodoMensualEmpleado 186
 CREATE OR ALTER PROCEDURE dbo.sp_ConsultarTodoMensualEmpleado
@@ -1632,9 +1583,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- =================================================================
-    -- RESULTADO 1: Listado de Planillas Mensuales
-    -- =================================================================
+-- Planilla mensual del empleado, con detalles de cada mes cerrado
     SELECT 
         PME.Id AS IdPlanillaMensual,
         PME.IdMesPlanilla,
@@ -1649,9 +1598,7 @@ BEGIN
     WHERE PME.IdEmpleado = @pIdEmpleado
     ORDER BY MP.FechaInicio DESC;
 
-    -- =================================================================
-    -- RESULTADO 2: Acumulado de Deducciones Mensuales por Categoría
-    -- =================================================================
+-- Detalles de las deducciones mensuales acumuladas
     SELECT 
         DXM.IdMesPlanilla,
         DXM.IdTipoDeduccion,
@@ -1665,3 +1612,12 @@ BEGIN
     INNER JOIN dbo.TipoDeduccion TD ON DXM.IdTipoDeduccion = TD.Id
     WHERE DXM.IdEmpleado = @pIdEmpleado;
 END;
+--------------------------------------------
+--Sp auxiliar para capa lógica
+ALTER PROCEDURE sp_ObtenerIdEmpleado
+    @inId INT
+AS
+BEGIN
+    SELECT Id FROM dbo.Empleado E WHERE E.IdUsuario = @inId
+END
+
