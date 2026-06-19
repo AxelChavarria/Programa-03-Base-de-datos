@@ -1,8 +1,9 @@
-import { loginUsuario, cerrarSesion, obtenerListaEmpleados } from './funcionesBD.js';
+import { loginUsuario, cerrarSesion, obtenerListaEmpleados, consultarTodoSemanalEmpleado, obtenerIdEmpleado, consultarTodoMensualEmpleado } from './funcionesBD.js';
 
 document.addEventListener("DOMContentLoaded", () => {
 
     const admin = JSON.parse(sessionStorage.getItem("admin"))
+    console.log(admin)
     const btnAtras = document.getElementById("btnAtras");
 
     if (admin == "1" && (location.pathname.includes("empleado.html") || location.pathname.includes("planillaSemanal.html") || location.pathname.includes("planillaMensual.html") || location.pathname.includes("salarioBruto.html"))) {
@@ -30,16 +31,20 @@ if (formLogin) {
         
         //llamada a la base de datos
         const res = await loginUsuario(username,password)
-        console.log(res)
+        
 
         if (res.Codigo == 0){
             sessionStorage.setItem("usuario", JSON.stringify(res["UsuarioId"]));
             if (res.RolId == 1){
+                
                 sessionStorage.setItem("admin", JSON.stringify("1"));
                 window.location.href = "lista.html";
             } else {
+                const res3 = await obtenerIdEmpleado(res.UsuarioId)
+                sessionStorage.setItem("empleado", JSON.stringify(res3[0].Id));
                 window.location.href = "empleado.html";
             } 
+
         } else {
             alert(res.Mensaje)
         }
@@ -140,7 +145,7 @@ if (tablaEmpleados) {
             const fila = this.closest("tr");
             const idEmpleado = fila.dataset.id;
 
-            sessionStorage.setItem("empleado", JSON.stringify("idEmpleado"));
+            sessionStorage.setItem("empleado", JSON.stringify(idEmpleado));
             window.location.href = `empleado.html`;
 
         });
@@ -149,14 +154,100 @@ if (tablaEmpleados) {
 }
 
 
-function mostrarInfo(titulo, descripcion){
+function mostrarInfo(tipo, datos) {
 
-    document.getElementById("texto").innerHTML =
-        "<b>" + titulo + "</b><br>" +
-        descripcion;
+    const modal = document.getElementById("cuadro");
+    const fondo = document.getElementById("fondo");
 
-    document.getElementById("cuadro").style.display="block";
-    document.getElementById("fondo").style.display="block";
+    console.log(datos)
+
+    if (tipo === "deduccion") {
+
+        modal.innerHTML = `
+            <h2>Deducciones</h2>
+            <div id="listaDeducciones"></div>
+            <button id="btn-cerrar" class="form-btn">Cerrar</button>
+        `;
+
+
+        const lista = document.getElementById("listaDeducciones");
+
+
+        datos.forEach(deduccion => {
+            if (deduccion.Monto != 0){
+
+                lista.innerHTML += `
+                    <div class="deduccion-item">
+                        <p><b>Tipo:</b> ${deduccion.NombreDeduccion}</p>
+                        <p><b>Porcentaje:</b> ${deduccion.PorcentajeAplicado}</p>
+                        <p><b>Monto:</b> ₡${deduccion.Monto}</p>
+                        <hr>
+                    </div>
+                `;
+            }
+        });
+
+
+    }
+
+
+    modal.style.display = "block";
+    fondo.style.display = "block";
+
+
+    // volver a crear listener porque el botón se genera dinámicamente
+    document.getElementById("btn-cerrar").onclick = () => {
+        modal.style.display = "none";
+        fondo.style.display = "none";
+    };
+}
+
+function mostrarInfo1(tipo, datos) {
+
+    const modal = document.getElementById("cuadro");
+    const fondo = document.getElementById("fondo");
+
+    console.log(datos)
+
+    if (tipo === "deduccion") {
+
+        modal.innerHTML = `
+            <h2>Deducciones</h2>
+            <div id="listaDeducciones"></div>
+            <button id="btn-cerrar" class="form-btn">Cerrar</button>
+        `;
+
+
+        const lista = document.getElementById("listaDeducciones");
+
+
+        datos.forEach(deduccion => {
+            if (deduccion.MontoAcumulado != 0){
+
+                lista.innerHTML += `
+                    <div class="deduccion-item">
+                        <p><b>Tipo:</b> ${deduccion.NombreDeduccion}</p>
+                        <p><b>Porcentaje:</b> ${deduccion.PorcentajeAplicado}</p>
+                        <p><b>Monto:</b> ₡${deduccion.MontoAcumulado}</p>
+                        <hr>
+                    </div>
+                `;
+            }
+        });
+
+
+    }
+
+
+    modal.style.display = "block";
+    fondo.style.display = "block";
+
+
+    // volver a crear listener porque el botón se genera dinámicamente
+    document.getElementById("btn-cerrar").onclick = () => {
+        modal.style.display = "none";
+        fondo.style.display = "none";
+    };
 }
 
 
@@ -165,105 +256,100 @@ function mostrarInfo(titulo, descripcion){
 const tablaPlanilla = document.getElementById("tabla-planilla-semanal");
 if (tablaPlanilla) {
 
+    const idEmpleado = JSON.parse(sessionStorage.getItem("empleado"))
+
     //llamamos a la base de datos
+    const informacion = await consultarTodoSemanalEmpleado(idEmpleado)
+    console.log(informacion)
 
-
+    console.log(idEmpleado)
     //desplegamos la información
-    /*
-    informacion.forEach(emp => {  //pasar por las listas
+    informacion[0].forEach(emp => {  //pasar por las listas
         tablaPlanilla.innerHTML += `
-            <tr data-id="${emp.Id}">
-                    <td>${emp.}</td>
-                    <td>${emp.}</td>
-                    <td>${emp.}</td>
-                    <td>${emp.}</td>
-                    <td>${emp.}</td>
-                    <td>${emp.}</td>
-                    
-
+            <tr data-id="${emp.IdSemanaPlanilla}">
+                    <td class="salario">${emp.SalarioBruto}</td>
+                    <td class="deducciones">${emp.TotalDeducciones}</td>
+                    <td>${emp.SalarioNeto}</td>
+                    <td>${emp.HorasOrdinarias}</td>
+                    <td>${emp.HorasExtrasNormales}</td>
+                    <td>${emp.HorasExtrasDobles}</td>
                 </tr>`;
     });
-    */
-
-    tablaPlanilla.innerHTML = `
-            <tr data-id="1">
-                    <td class="salario">bruto</td>
-                    <td class="deducciones">
-                        deducciones
-                    </td>
-                    <td>neto</td>
-                    <td>ordinarias</td>
-                    <td>extra normales</td>
-                    <td>extra dobles</td>
-                    
-
-                </tr>`;
+    
 
     document.addEventListener("click", (e) => {
 
     if (e.target.classList.contains("deducciones")) {
 
-        mostrarInfo("deduccion", "a");
+
+        const fila = e.target.closest("tr");
+
+        const idSemanaPlanilla = fila.dataset.id;
+
+
+        // filtrar deducciones por id
+        const deduccionesEmpleado = informacion[1].filter(
+            d => d.IdSemanaPlanilla == idSemanaPlanilla
+        );
+
+
+        mostrarInfo("deduccion", deduccionesEmpleado);
 
     }
 
     if (e.target.classList.contains("salario")) {
 
-        window.location.href = "salarioBruto.html";
+    const fila = e.target.closest("tr");
 
-    }
+    const idSemanaPlanilla = fila.dataset.id;
+
+
+    sessionStorage.setItem(
+        "idSemanaPlanilla",
+        idSemanaPlanilla
+    );
+
+
+    window.location.href = "salarioBruto.html";
+
+}
 });
 }
 
-const modal = document.getElementById("cuadro");
-const btnCerrar = document.getElementById("btn-cerrar");
-
-if (btnCerrar) {
-    btnCerrar.addEventListener("click", () => {
-        modal.style.display = "none";
-        document.getElementById("fondo").style.display="none";
-    });
-}
 
 //tabla de salario bruto
 const tablaSalario = document.getElementById("tabla-salario");
 if (tablaSalario) {
 
 
-    tablaSalario.innerHTML = `
-            <tr data-id="1">
-                    <td>1</td>
-                    <td>1</td>
-                    <td>1</td>
-                    <td>2</td>
-                    <td>2</td>
-                    <td>2</td>
-                    <td>3</td>
-                    <td>3</td>
-                    <td>3</td>
-                </tr>`;
+    const idSemanaPlanilla = sessionStorage.getItem("idSemanaPlanilla");
+    const idEmpleado = JSON.parse(sessionStorage.getItem("empleado"))
+
     //llamamos a la base de datos
+    const informacion = await consultarTodoSemanalEmpleado(idEmpleado)
 
 
     //desplegamos la información
-    /*
-    informacion.forEach(emp => {  //pasar por las listas
+
+    const salariosFiltrados = informacion[2].filter(
+        emp => emp.IdSemanaPlanilla == idSemanaPlanilla
+    );
+    
+    salariosFiltrados.forEach(emp => {  //pasar por las listas
         tablaSalario.innerHTML += `
             <tr data-id="${emp.Id}">
-                    <td>${emp.}</td>
-                    <td>${emp.}</td>
-                    <td>${emp.}</td>
-                    <td>${emp.}</td>
-                    <td>${emp.}</td>
-                    <td>${emp.}</td>
-                    <td>${emp.}</td>
-                    <td>${emp.}</td>
-                    <td>${emp.}</td>
-                    <td>${emp.}</td>
-                    <td>${emp.}</td>
+                    <td>${emp.Fecha}</td>
+                    <td>${emp.HoraEntrada}</td>
+                    <td>${emp.HoraSalida}</td>
+                    <td>${emp.HorasOrdinarias}</td>
+                    <td>${emp.MontoOrdinario}</td>
+                    <td>${emp.HorasExtrasNormales}</td>
+                    <td>${emp.MontoExtraNormal}</td>
+                    <td>${emp.HorasExtrasDobles}</td>
+                    <td>${emp.MontoExtraDoble}</td>
                 </tr>`;
     });
-    */
+    
 }
 
 //tabla de planilla mensual
@@ -271,37 +357,57 @@ const tablaPlanilla1 = document.getElementById("tabla-planilla-mensual");
 if (tablaPlanilla1) {
 
     //llamamos a la base de datos
+    const idEmpleado = JSON.parse(sessionStorage.getItem("empleado"))
+    const informacion = await consultarTodoMensualEmpleado(idEmpleado)
 
 
     //desplegamos la información
-    /*
-    informacion.forEach(emp => {  //pasar por las listas
+
+    informacion[0].forEach(emp => {  //pasar por las listas
         tablaPlanilla1.innerHTML += `
-            <tr data-id="${emp.Id}">
-                    <td>${emp.}</td>
-                    <td>${emp.}</td>
-                    <td>${emp.}</td>
+            <tr data-id="${emp.IdMesPlanilla}">
+                    <td>${emp.SalarioBrutoMensual}</td>
+                    <td class="deducciones">${emp.DeduccionesMensuales}</td>
+                    <td>${emp.SalarioNetoMensual}</td>
                 </tr>`;
     });
-    */
 
-    tablaPlanilla1.innerHTML = `
-            <tr data-id="1">
-                    <td>bruto</td>
-                    <td class="deducciones">
-                        deducciones
-                    </td>
-                    <td>neto</td>
-                </tr>`;
+
 
     document.addEventListener("click", (e) => {
 
     if (e.target.classList.contains("deducciones")) {
 
-        mostrarInfo("deduccion", "a");
+
+        const fila = e.target.closest("tr");
+
+        const idMesPlanilla = fila.dataset.id;
+
+
+        // filtrar deducciones por id
+        const deduccionesEmpleado = informacion[1].filter(
+            d => d.IdMesPlanilla == idMesPlanilla
+        );
+
+
+        mostrarInfo1("deduccion", deduccionesEmpleado);
 
     }
 
 
 });
 }
+
+const btnAtras1 = document.getElementById("btnAtrasSalario");
+if (btnAtras1){
+        btnAtras1.addEventListener("click", () => {
+            window.location.href = "planillaSemanal.html";
+        });
+    }
+
+const btnAtras2 = document.getElementById("btnAtrasPlanilla");
+if (btnAtras2){
+        btnAtras2.addEventListener("click", () => {
+            window.location.href = "empleado.html";
+        });
+    }
