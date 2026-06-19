@@ -83,29 +83,44 @@ const res = await obtenerListaEmpleados("",1, "ip prueba")
 console.log(res)
 */
 
-export async function cargarPlanillaDesdeArchivo() {
+
+// retorna
+// [0] Planilla semanal
+//  [1] deglose de deducciones
+// [2] desglose de asistencia
+export async function consultarTodoSemanalEmpleado(idEmpleado, idPostByUser = 1, ip = '127.0.0.1') {
     try {
-        const response = await fetch('http://localhost:3002/api/admin/cargar-planilla', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+        const respuestaRaw = await fetch(`http://localhost:3002/api/planilla/semanal?idEmpleado=${idEmpleado}&idPostByUser=${idPostByUser}&ip=${ip}`, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" }
         });
-
-        const resultado = await response.json();
-
-        if (response.ok && resultado.Codigo !== -1) {
-            console.log("Éxito:", resultado.Mensaje);
-            return true;
-        } else {
-            console.error("Error en la carga:", resultado.Mensaje);
-            return false;
-        }
-
-    } catch (error) {
-        console.error("Fallo de red al conectar con /api/admin/cargar-planilla:", error.message);
-        return false;
+        return await respuestaRaw.json();
+    } catch (err) {
+        return { outCodigo: -1, outMensaje: err.message };
     }
 }
 
-console.log(await cargarPlanillaDesdeArchivo())
+/*
+const res1 = await consultarTodoSemanalEmpleado(186)
+console.log(res1)
+*/
+
+
+// [0] Planilla mensual
+// [1] deglose de deducciones
+export async function consultarTodoMensualEmpleado(idEmpleado, idPostByUser = 1, ip = '127.0.0.1') {
+    try {
+        const respuestaRaw = await fetch(`http://localhost:3002/api/planilla/mensual?idEmpleado=${idEmpleado}&idPostByUser=${idPostByUser}&ip=${ip}`, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" }
+        });
+        return await respuestaRaw.json();
+    } catch (err) {
+        return { outCodigo: -1, outMensaje: err.message };
+    }
+}
+
+/*
+const res2 = await consultarTodoMensualEmpleado(186)
+console.log(res2)
+*/

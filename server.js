@@ -18,16 +18,13 @@ app.use(express.static(__dirname));
 const config = {
     user: 'bdd_sql_2026', 
     password: 'Tec20IC26', 
-    server: 'py-01-bdd-1s2026.database.windows.net', 
-    database: 'Proyecto03BDD',
-  
-    // Subimos a 10 minutos
+    server: 'py-01-bdd-1s2026.database.windows.net',     database: 'Proyecto03BDD',  
     options: {
         encrypt: true, 
         trustServerCertificate: true,
 
     },
-    pool: 
+
 };
 
 
@@ -144,6 +141,41 @@ app.get('/api/empleados', async (req, res) => {
             .execute('sp_ListarEmpleados');
 
         res.json(result.recordset); 
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/planilla/semanal', async (req, res) => {
+    const { idEmpleado, idPostByUser, ip } = req.query;
+
+    try {
+        let pool = await sql.connect(config);
+        let result = await pool.request()
+            .input('pIdEmpleado', sql.Int, parseInt(idEmpleado))
+
+            .execute('dbo.sp_ConsultarTodoSemanalEmpleado');
+
+        // Retorna un arreglo con las 3 tablas: [planillasSemanales, deduccionesSemanales, asistenciasDiarias]
+        res.json(result.recordsets); 
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+app.get('/api/planilla/mensual', async (req, res) => {
+    const { idEmpleado, idPostByUser, ip } = req.query;
+
+    try {
+        let pool = await sql.connect(config);
+        let result = await pool.request()
+            .input('pIdEmpleado', sql.Int, parseInt(idEmpleado))
+
+            .execute('dbo.sp_ConsultarTodoMensualEmpleado');
+
+        // Retorna un arreglo con las 2 tablas: [planillasMensuales, deduccionesMensuales]
+        res.json(result.recordsets); 
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
