@@ -8,7 +8,7 @@ BEGIN
         BEGIN TRANSACTION;
 
         --- PUESTOS
-        INSERT INTO Puesto (Nombre, SalarioxHora)
+        INSERT INTO dbo.Puesto (Nombre, SalarioxHora)
         SELECT 
             T.Node.value('@Nombre', 'VARCHAR(100)'),
             T.Node.value('@SalarioXHora', 'DECIMAL(10,2)')
@@ -16,7 +16,7 @@ BEGIN
         WHERE T.Node.value('@Nombre', 'VARCHAR(100)') NOT IN (SELECT Nombre FROM Puesto);
 
         --- TIPOS DE JORNADA
-        INSERT INTO TipoJornada (Id, Nombre, HoraInicio, HoraFin)
+        INSERT INTO dbo.TipoJornada (Id, Nombre, HoraInicio, HoraFin)
         SELECT 
             T.Node.value('@Id', 'INT'),
             T.Node.value('@Nombre', 'VARCHAR(50)'),
@@ -36,44 +36,44 @@ BEGIN
         WHERE T.Node.value('@Id', 'INT') NOT IN (SELECT Id FROM Feriado);
 
         --- TIPOS DE EVENTO
-        INSERT INTO TipoEvento (Id, Nombre)
+        INSERT INTO dbo.TipoEvento (Id, Nombre)
         SELECT 
             T.Node.value('@Id', 'INT'),
             T.Node.value('@Nombre', 'VARCHAR(100)')
         FROM @inXmlData.nodes('/Datos/TiposEvento/TipoEvento') AS T(Node)
-        WHERE T.Node.value('@Id', 'INT') NOT IN (SELECT Id FROM TipoEvento);
+        WHERE T.Node.value('@Id', 'INT') NOT IN (SELECT Id FROM dbo.TipoEvento);
 
         -- TIPOS DE MOVIMIENTO
-        INSERT INTO TipoMovimiento (Id, Nombre, Accion)
+        INSERT INTO dbo.TipoMovimiento (Id, Nombre, Accion)
         SELECT 
             T.Node.value('@Id', 'INT'),
             T.Node.value('@Nombre', 'VARCHAR(100)'),
             T.Node.value('@Accion', 'CHAR(1)')
         FROM @inXmlData.nodes('/Datos/TiposMovimiento/TipoMovimiento') AS T(Node)
-        WHERE T.Node.value('@Id', 'INT') NOT IN (SELECT Id FROM TipoMovimiento); -- <-- CORREGIDO AQU�
+        WHERE T.Node.value('@Id', 'INT') NOT IN (SELECT Id FROM dbo.TipoMovimiento); 
 
         
-        --- TIPOS DE DEDUCCI�N
-        INSERT INTO TipoDeduccion (Id, Nombre, EsObligatoria, EsPorcentual, Valor, IdTipoMovimiento)
+        --- TIPOS DE DEDUCCIN
+        INSERT INTO dbo.TipoDeduccion (Id, Nombre, EsObligatoria, EsPorcentual, Valor, IdTipoMovimiento)
         SELECT 
             T.Node.value('@Id', 'INT'),
             T.Node.value('@Nombre', 'VARCHAR(100)'),
             T.Node.value('@EsObligatoria', 'BIT'),
             T.Node.value('@EsPorcentual', 'BIT'),
             T.Node.value('@Valor', 'DECIMAL(5,4)'),
-            (SELECT Id FROM TipoMovimiento WHERE Nombre = T.Node.value('@TipoMovimiento', 'VARCHAR(100)'))
+            (SELECT Id FROM dbo.TipoMovimiento WHERE Nombre = T.Node.value('@TipoMovimiento', 'VARCHAR(100)'))
         FROM @inXmlData.nodes('/Datos/TiposDeduccion/TipoDeduccion') AS T(Node)
         WHERE T.Node.value('@Id', 'INT') NOT IN (SELECT Id FROM TipoDeduccion);
 
         --- USUARIOS
-        INSERT INTO Usuario (Id, Username, PasswordHash, Tipo)
+        INSERT INTO dbo.Usuario (Id, Username, PasswordHash, Tipo)
         SELECT 
             T.Node.value('@Id', 'INT'),
             T.Node.value('@Username', 'VARCHAR(50)'),
             T.Node.value('@PasswordHash', 'VARCHAR(100)'),
             T.Node.value('@Tipo', 'INT')
         FROM @inXmlData.nodes('/Datos/Usuarios/Usuario') AS T(Node)
-        WHERE T.Node.value('@Id', 'INT') NOT IN (SELECT Id FROM Usuario);
+        WHERE T.Node.value('@Id', 'INT') NOT IN (SELECT Id FROM dbo.Usuario);
 
         --- ERRORES
         INSERT INTO Error (Codigo, Descripcion)
@@ -81,18 +81,18 @@ BEGIN
             T.Node.value('@Codigo', 'INT'),
             T.Node.value('@Descripcion', 'VARCHAR(255)')
         FROM @inXmlData.nodes('/Datos/Error/error') AS T(Node)
-        WHERE T.Node.value('@Codigo', 'INT') NOT IN (SELECT Codigo FROM Error);
+        WHERE T.Node.value('@Codigo', 'INT') NOT IN (SELECT dbo.Error.Codigo FROM dbo.Error);
 
         COMMIT TRANSACTION;
 
-        SELECT 1 AS Codigo, 'Carga masiva de cat�logos ejecutada con �xito' AS Mensaje;
+        SELECT 1 AS Codigo, 'Carga de xml ejecutada con éxito' AS Mensaje;
 
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0
             ROLLBACK TRANSACTION;
 
-        INSERT INTO DBError (UserName, Number, State, Severity, Line, [Procedure], Message)
+        INSERT INTO dbo.DBError (UserName, Number, State, Severity, Line, [Procedure], Message)
         VALUES (
             SUSER_SNAME(),
             ERROR_NUMBER(),
@@ -120,7 +120,7 @@ ALTER PROCEDURE sp_ValidarLogin
 AS
 BEGIN
     SET NOCOUNT ON;
-    --- Variables para la inserci�n
+    --- Variables para la inserción
     DECLARE @TipoEvento INT;
     SET @outIdUsuario = NULL;
     DECLARE @MensajeBitacora VARCHAR(128)
@@ -136,7 +136,7 @@ BEGIN
 
     ELSE
     BEGIN
-    -- Validar Contrase�a
+    -- Validar Contraseña
         IF NOT EXISTS (SELECT 1 FROM dbo.Usuario U WHERE U.PasswordHash = @inPassword AND U.Username = @inUsername)
         BEGIN 
             SELECT @outCodigo = Codigo, @outMensaje = Descripcion 
@@ -168,10 +168,8 @@ BEGIN
     VALUES (@TipoEvento, @MensajeBitacora +' : ' + @inUsername, 1, @inIP, GETDATE() AT TIME ZONE 'UTC' AT TIME ZONE 'Central America Standard Time')
 END;
 
-EXEC sp_ValidarLogin 'admin', 'admin123', 'ipprueba'
-SELECT * FROM dbo.BitacoraEvento
 
-
+-------------------------------------------------------------------------------------------
 
 CREATE PROCEDURE sp_RegistrarLogout
     @inIdUsuario INT,
@@ -188,11 +186,8 @@ BEGIN
     SET @outMensaje = 'Logout registrado';
 END;
 
-SELECT * FROM dbo.BitacoraEvento
 
-
-
-
+------------------------------------------------------------------------------
 CREATE PROCEDURE sp_ListarEmpleados
     @inFiltro VARCHAR(100),
     @inIdPostByUser INT,
@@ -217,7 +212,7 @@ BEGIN
     END
 
 
-    -- solo n�meros (c�dula)
+    -- solo números (cédula)
     ELSE IF @inFiltro NOT LIKE '%[^0-9]%'
     BEGIN
         SELECT 
@@ -263,36 +258,6 @@ END;
 
 
 
-CREATE PROCEDURE sp_GetPlanillasSemanales
-    @inIdEmpleado INT,
-    @inLimite INT
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    SELECT TOP (@inLimite)
-        P.Id AS IdPlanillaSemanal,
-        P.IdSemanaPlanilla,
-        -- Pegamos la fecha de inicio y fin para que se vea lindo: "18/05/2026 al 24/05/2026"
-        CONVERT(VARCHAR, S.FechaInicio, 103) + ' al ' + CONVERT(VARCHAR, S.FechaFin, 103) AS Periodo,
-        P.SalarioBruto,     -- <-- Esto ser� clickeable en tu pantalla
-        P.TotalDeducciones, -- <-- Esto tambi�n ser� clickeable
-        P.SalarioNeto,
-        P.HorasOrdinarias,
-        P.HorasExtrasNormales,
-        P.HorasExtrasDobles
-    FROM PlanillaSemXEmpleado P
-    INNER JOIN SemanaPlanilla S ON P.IdSemanaPlanilla = S.Id
-    WHERE P.IdEmpleado = @inIdEmpleado
-    ORDER BY S.FechaInicio DESC; 
-
-
-
-
-
-
-
-
 CREATE OR ALTER TRIGGER TR_Empleado_AsignarDeduccionesObligatorias
 ON Empleado
 AFTER INSERT
@@ -312,10 +277,6 @@ BEGIN
     WHERE td.EsObligatoria = 1;
 END;
 
-SELECT * FROM PlanillaSemXEmpleado
-SELECT * FROM Usuario
-SELECT * FROM Empleado
-CREATE PROCEDURE sp_AgregarEmpleado
 
 ALTER PROCEDURE sp_CargarEmpleadoXML
     @inXmlData XML

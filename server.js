@@ -181,5 +181,20 @@ app.get('/api/planilla/mensual', async (req, res) => {
     }
 });
 
+app.get('/api/empleado/obtener-id', async (req, res) => {
+    const { idEmpleado } = req.query;
+
+    try {
+        let pool = await sql.connect(config);
+        let result = await pool.request()
+            .input('inId', sql.Int, parseInt(idEmpleado)) 
+            .execute('dbo.sp_ObtenerIdEmpleado');
+
+        
+        res.json(result.recordset); 
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 app.listen(3002, () => console.log('Servidor corriendo en puerto 3002'));

@@ -13,19 +13,19 @@ CREATE TABLE TipoEvento (Id INT PRIMARY KEY, Nombre VARCHAR(100) NOT NULL)
 -- C o D
 CREATE TABLE TipoMovimiento (Id INT PRIMARY KEY, Nombre VARCHAR(100) NOT NULL,Accion CHAR(1) NOT NULL CHECK (Accion IN ('C', 'D')))
 
--- TipoDeduccion: NO usa identity. Id directo del XML. Relacionado con TipoMovimiento.
+
 CREATE TABLE TipoDeduccion (
     Id INT PRIMARY KEY,
     Nombre VARCHAR(100) NOT NULL,
-    EsObligatoria BIT NOT NULL,  -- 0=No, 1=Si
-    EsPorcentual BIT NOT NULL,   -- 0=No, 1=Si
-    Valor DECIMAL(5,4) NOT NULL, -- Ej: 0.0950
+    EsObligatoria BIT NOT NULL,  
+    EsPorcentual BIT NOT NULL,   
+    Valor DECIMAL(5,4) NOT NULL, 
     IdTipoMovimiento INT FOREIGN KEY REFERENCES TipoMovimiento(Id)
 );
 
--- Error: Catálogo de errores específicos del sistema.
+
 CREATE TABLE Error (
-    Codigo INT PRIMARY KEY, -- El XML usa "Codigo" como PK directa
+    Codigo INT PRIMARY KEY, 
     Descripcion VARCHAR(255) NOT NULL
 );
 
@@ -71,7 +71,7 @@ CREATE TABLE SemanaPlanilla (
     IdMesPlanilla INT FOREIGN KEY REFERENCES MesPlanilla(Id) NOT NULL,
     FechaInicio DATE NOT NULL,
     FechaFin DATE NOT NULL,
-    CantidadJuevesMes INT NOT NULL, -- Útil para saber si se divide la deducción fija entre 4 o 5
+    CantidadJuevesMes INT NOT NULL, -- para saber si se divide la deducción fija entre 4 o 5
     EsCerrado BIT DEFAULT 0 NOT NULL
 );
 
@@ -82,7 +82,7 @@ CREATE TABLE CalendarioJornadaEmpleado (
     IdEmpleado INT FOREIGN KEY REFERENCES Empleado(Id) NOT NULL,
     IdSemanaPlanilla INT FOREIGN KEY REFERENCES SemanaPlanilla(Id) NOT NULL,
     IdTipoJornada INT FOREIGN KEY REFERENCES TipoJornada(Id) NOT NULL,
-    UNIQUE (IdEmpleado, IdSemanaPlanilla) -- Un turno por semana por empleado
+    UNIQUE (IdEmpleado, IdSemanaPlanilla) 
 );
 
 
@@ -92,7 +92,7 @@ CREATE TABLE Asistencia (
     IdSemanaPlanilla INT FOREIGN KEY REFERENCES SemanaPlanilla(Id) NOT NULL,
     Fecha DATE NOT NULL,
     HoraEntrada DATETIME NOT NULL,
-    HoraSalida DATETIME NULL -- Puede quedar null temporalmente si solo marca entrada
+    HoraSalida DATETIME NULL 
 );
 
 
@@ -104,7 +104,7 @@ CREATE TABLE DeduccionXEmpleado (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     IdEmpleado INT FOREIGN KEY REFERENCES Empleado(Id) NOT NULL,
     IdTipoDeduccion INT FOREIGN KEY REFERENCES TipoDeduccion(Id) NOT NULL,
-    PorcentajeOMonto DECIMAL(10,2) NOT NULL, -- Aquí va el factor custom del XML (ej: pensión alimenticia)
+    PorcentajeOMonto DECIMAL(10,2) NOT NULL,
     EsActiva BIT DEFAULT 1 NOT NULL,
     UNIQUE(IdEmpleado, IdTipoDeduccion)
 );
@@ -116,10 +116,10 @@ CREATE TABLE Movimiento (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     IdEmpleado INT FOREIGN KEY REFERENCES Empleado(Id) NOT NULL,
     IdTipoMovement INT FOREIGN KEY REFERENCES TipoMovimiento(Id) NOT NULL, 
-    IdSemanaPlanilla INT FOREIGN KEY REFERENCES SemanaPlanilla(Id) NOT NULL, -- Enlace clave al tiempo
+    IdSemanaPlanilla INT FOREIGN KEY REFERENCES SemanaPlanilla(Id) NOT NULL, 
     Fecha DATETIME DEFAULT GETDATE() NOT NULL,
     Monto DECIMAL(10,2) NOT NULL,
-    NuevoSaldo DECIMAL(10,2) NOT NULL, -- Saldo acumulado semanal/vacacional del empleado
+    NuevoSaldo DECIMAL(10,2) NOT NULL, 
     IdPostByUser INT FOREIGN KEY REFERENCES Usuario(Id) NOT NULL,
     PostInIP VARCHAR(50) NOT NULL,
     PostTime DATETIME DEFAULT GETDATE() NOT NULL
@@ -168,7 +168,7 @@ ALTER TABLE dbo.DeduccionSemanalXEmpleado ADD IdTipoDeduccion INT NULL
 CREATE TABLE BitacoraEvento (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     idTipoEvento INT FOREIGN KEY REFERENCES TipoEvento(Id) NOT NULL, 
-    Descripcion VARCHAR(MAX) NOT NULL, -- Aquí se guardará el string estructurado en JSON (Campos antes/después, parámetros)
+    Descripcion VARCHAR(MAX) NOT NULL, 
     IdPostByUser INT FOREIGN KEY REFERENCES Usuario(Id) NOT NULL,
     PostInIP VARCHAR(50) NOT NULL,
     PostTime DATETIME DEFAULT GETDATE() NOT NULL
@@ -200,8 +200,7 @@ CREATE TABLE dbo.DeduccionSemanalXEmpleado (
     IdSemanaPlanilla INT NOT NULL,
     Detalle VARCHAR(250) NOT NULL,
     Monto DECIMAL(12,2) NOT NULL,
-    
-    -- Restricciones de Llaves Foráneas para mantener la integridad relacional
+
     CONSTRAINT FK_DeduccionSemanal_Empleado FOREIGN KEY (IdEmpleado) 
         REFERENCES dbo.Empleado(Id),
     CONSTRAINT FK_DeduccionSemanal_SemanaPlanilla FOREIGN KEY (IdSemanaPlanilla) 

@@ -124,3 +124,18 @@ export async function consultarTodoMensualEmpleado(idEmpleado, idPostByUser = 1,
 const res2 = await consultarTodoMensualEmpleado(186)
 console.log(res2)
 */
+
+export async function obtenerIdEmpleado(idEmpleado) {
+    try {
+        const respuestaRaw = await fetch(`http://localhost:3002/api/empleado/obtener-id?idEmpleado=${idEmpleado}`, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" }
+        });
+        return await respuestaRaw.json();
+    } catch (err) {
+        return { outCodigo: -1, outMensaje: err.message };
+    }
+}
+
+const res3 = await obtenerIdEmpleado(10)
+console.log(res3)
