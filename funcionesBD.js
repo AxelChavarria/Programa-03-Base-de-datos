@@ -136,6 +136,7 @@ export async function obtenerIdEmpleado(idEmpleado) {
         return { outCodigo: -1, outMensaje: err.message };
     }
 }
-
+/*
 const res3 = await obtenerIdEmpleado(10)
 console.log(res3)
+*/

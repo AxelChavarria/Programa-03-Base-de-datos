@@ -211,14 +211,23 @@ h1 {
 #cuadro {
     display: none;
     position: fixed;
-    top: 30%;
+    top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+
+    width: 420px;
+    max-height: 80vh;
+    overflow-y: auto;
+
     background: white;
-    border: 2px solid #333;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 0 15px #555;
+    border-radius: 15px;
+    padding: 25px;
+
+    box-shadow: 0 10px 35px rgba(0,0,0,0.35);
+
+    z-index: 1000;
+
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 #fondo {
