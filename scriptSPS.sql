@@ -1581,5 +1581,126 @@ BEGIN
 END;
 
 
+SELECT * FROM Empleado
+EXEC sp_ConsultarTodoSemanalEmpleado 186
+CREATE OR ALTER PROCEDURE dbo.sp_ConsultarTodoSemanalEmpleado
+    @pIdEmpleado INT
+AS
+BEGIN
+    SET NOCOUNT ON;
 
-EXEC dbo.sp_ProcesarOperacionesXML @inXmlData = @XMLSimulacion;
+    -- =================================================================
+    -- RESULTADO 1: Listado de Planillas Semanales
+    -- =================================================================
+    SELECT 
+        PSE.Id AS IdPlanillaSemanal,
+        PSE.IdSemanaPlanilla,
+        SP.FechaInicio,
+        SP.FechaFin,
+        PSE.SalarioBruto,
+        PSE.TotalDeducciones,
+        PSE.SalarioNeto,
+        PSE.HorasOrdinarias,
+        PSE.HorasExtrasNormales,
+        PSE.HorasExtrasDobles,
+        PSE.IdTipoJornada
+    FROM dbo.PlanillaSemXEmpleado PSE
+    INNER JOIN dbo.SemanaPlanilla SP ON PSE.IdSemanaPlanilla = SP.Id
+    WHERE PSE.IdEmpleado = @pIdEmpleado
+    ORDER BY SP.FechaInicio DESC;
+
+    -- =================================================================
+    -- RESULTADO 2: Detalle de Deducciones Semanales
+    -- =================================================================
+    SELECT 
+        DSE.IdSemanaPlanilla,
+        DSE.IdTipoDeduccion,
+        DSE.Detalle AS NombreDeduccion,
+        CASE 
+            WHEN DSE.IdTipoDeduccion = 1 THEN 10.67
+            ELSE ISNULL(DXE.PorcentajeOMonto * 100, 0) 
+        END AS PorcentajeAplicado,
+        DSE.Monto
+    FROM dbo.DeduccionSemanalXEmpleado DSE
+    LEFT JOIN dbo.DeduccionXEmpleado DXE ON DSE.IdEmpleado = DXE.IdEmpleado AND DSE.IdTipoDeduccion = DXE.IdTipoDeduccion
+    WHERE DSE.IdEmpleado = @pIdEmpleado;
+
+    -- =================================================================
+    -- RESULTADO 3: Desglose Diario de Asistencias y Rubros en Colones
+    -- =================================================================
+    DECLARE @SalarioHora DECIMAL(10,2);
+    SELECT @SalarioHora = P.SalarioxHora 
+    FROM dbo.Empleado E 
+    INNER JOIN dbo.Puesto P ON E.IdPuesto = P.Id 
+    WHERE E.Id = @pIdEmpleado;
+
+    SELECT 
+        A.IdSemanaPlanilla,
+        CAST(A.HoraEntrada AS DATE) AS Fecha,
+        CONVERT(VARCHAR(5), A.HoraEntrada, 108) AS HoraEntrada,
+        CONVERT(VARCHAR(5), A.HoraSalida, 108) AS HoraSalida,
+        
+        -- Cálculo de Horas Ordinarias y su Monto
+        CASE WHEN F.Fecha IS NULL AND (DATEDIFF(MINUTE, A.HoraEntrada, A.HoraSalida) / 60.0) <= dbo.fn_ObtenerLimiteHorasJornada(TJ.Nombre) THEN (DATEDIFF(MINUTE, A.HoraEntrada, A.HoraSalida) / 60.0)
+             WHEN F.Fecha IS NULL AND (DATEDIFF(MINUTE, A.HoraEntrada, A.HoraSalida) / 60.0) > dbo.fn_ObtenerLimiteHorasJornada(TJ.Nombre) THEN dbo.fn_ObtenerLimiteHorasJornada(TJ.Nombre) ELSE 0 END AS HorasOrdinarias,
+        (CASE WHEN F.Fecha IS NULL AND (DATEDIFF(MINUTE, A.HoraEntrada, A.HoraSalida) / 60.0) <= dbo.fn_ObtenerLimiteHorasJornada(TJ.Nombre) THEN (DATEDIFF(MINUTE, A.HoraEntrada, A.HoraSalida) / 60.0)
+              WHEN F.Fecha IS NULL AND (DATEDIFF(MINUTE, A.HoraEntrada, A.HoraSalida) / 60.0) > dbo.fn_ObtenerLimiteHorasJornada(TJ.Nombre) THEN dbo.fn_ObtenerLimiteHorasJornada(TJ.Nombre) ELSE 0 END) * @SalarioHora AS MontoOrdinario,
+
+        -- Cálculo de Horas Extras Normales y su Monto
+        CASE WHEN F.Fecha IS NULL AND (DATEDIFF(MINUTE, A.HoraEntrada, A.HoraSalida) / 60.0) > dbo.fn_ObtenerLimiteHorasJornada(TJ.Nombre) THEN (DATEDIFF(MINUTE, A.HoraEntrada, A.HoraSalida) / 60.0) - dbo.fn_ObtenerLimiteHorasJornada(TJ.Nombre) ELSE 0 END AS HorasExtrasNormales,
+        (CASE WHEN F.Fecha IS NULL AND (DATEDIFF(MINUTE, A.HoraEntrada, A.HoraSalida) / 60.0) > dbo.fn_ObtenerLimiteHorasJornada(TJ.Nombre) THEN (DATEDIFF(MINUTE, A.HoraEntrada, A.HoraSalida) / 60.0) - dbo.fn_ObtenerLimiteHorasJornada(TJ.Nombre) ELSE 0 END) * @SalarioHora * 1.5 AS MontoExtraNormal,
+
+        -- Cálculo de Horas Feriadas (Dobles) y su Monto
+        CASE WHEN F.Fecha IS NOT NULL THEN (DATEDIFF(MINUTE, A.HoraEntrada, A.HoraSalida) / 60.0) ELSE 0 END AS HorasExtrasDobles,
+        (CASE WHEN F.Fecha IS NOT NULL THEN (DATEDIFF(MINUTE, A.HoraEntrada, A.HoraSalida) / 60.0) ELSE 0 END) * @SalarioHora * 2.0 AS MontoExtraDoble
+
+    FROM dbo.Asistencia A
+    INNER JOIN dbo.SemanaPlanilla SP ON A.IdSemanaPlanilla = SP.Id
+    INNER JOIN dbo.CalendarioJornadaEmpleado CJE ON A.IdEmpleado = CJE.IdEmpleado AND CJE.IdSemanaPlanilla = SP.Id
+    INNER JOIN dbo.TipoJornada TJ ON CJE.IdTipoJornada = TJ.Id
+    LEFT JOIN dbo.Feriado F ON CAST(A.HoraEntrada AS DATE) = F.Fecha
+    WHERE A.IdEmpleado = @pIdEmpleado
+    ORDER BY A.HoraEntrada ASC;
+END;
+
+
+EXEC sp_ConsultarTodoMensualEmpleado 186
+CREATE OR ALTER PROCEDURE dbo.sp_ConsultarTodoMensualEmpleado
+    @pIdEmpleado INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- =================================================================
+    -- RESULTADO 1: Listado de Planillas Mensuales
+    -- =================================================================
+    SELECT 
+        PME.Id AS IdPlanillaMensual,
+        PME.IdMesPlanilla,
+        UPPER(DATENAME(MONTH, MP.FechaInicio)) + ' ' + CAST(YEAR(MP.FechaInicio) AS VARCHAR(4)) AS MesNombre,
+        MP.FechaInicio,
+        MP.FechaFin,
+        PME.SalarioBrutoMensual,
+        PME.DeduccionesMensuales,
+        PME.SalarioNetoMensual
+    FROM dbo.PlanillaMesXEmpleado PME
+    INNER JOIN dbo.MesPlanilla MP ON PME.IdMesPlanilla = MP.Id
+    WHERE PME.IdEmpleado = @pIdEmpleado
+    ORDER BY MP.FechaInicio DESC;
+
+    -- =================================================================
+    -- RESULTADO 2: Acumulado de Deducciones Mensuales por Categoría
+    -- =================================================================
+    SELECT 
+        DXM.IdMesPlanilla,
+        DXM.IdTipoDeduccion,
+        TD.Nombre AS NombreDeduccion,
+        CASE 
+            WHEN TD.Id = 1 THEN 10.67
+            ELSE ISNULL((SELECT TOP 1 DXE.PorcentajeOMonto * 100 FROM dbo.DeduccionXEmpleado DXE WHERE DXE.IdEmpleado = @pIdEmpleado AND DXE.IdTipoDeduccion = TD.Id), 0)
+        END AS PorcentajeAplicado,
+        DXM.MontoAcumulado
+    FROM dbo.DeduccionesXEmpleadoXMes DXM
+    INNER JOIN dbo.TipoDeduccion TD ON DXM.IdTipoDeduccion = TD.Id
+    WHERE DXM.IdEmpleado = @pIdEmpleado;
+END;
