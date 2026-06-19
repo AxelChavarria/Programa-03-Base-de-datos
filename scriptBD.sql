@@ -159,6 +159,7 @@ CREATE TABLE DeduccionesXEmpleadoXMes (
     MontoAcumulado DECIMAL(10,2) DEFAULT 0.00 NOT NULL,
     UNIQUE (IdEmpleado, IdMesPlanilla, IdTipoDeduccion)
 );
+ALTER TABLE dbo.DeduccionSemanalXEmpleado ADD IdTipoDeduccion INT NULL
 
 
 --------------- 7 Auditoría y errores
@@ -189,7 +190,21 @@ USE Proyecto03BDD
 
 
 SELECT * FROM BitacoraEvento
-------------------- INSERCIÓN DE USUARIOS EMPLEADO-------------------------
-ALTER TABLE Empleado
-ADD CuentaBancaria VARCHAR(256)
-USE Proyecto03BDD
+
+
+
+
+CREATE TABLE dbo.DeduccionSemanalXEmpleado (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    IdEmpleado INT NOT NULL,
+    IdSemanaPlanilla INT NOT NULL,
+    Detalle VARCHAR(250) NOT NULL,
+    Monto DECIMAL(12,2) NOT NULL,
+    
+    -- Restricciones de Llaves Foráneas para mantener la integridad relacional
+    CONSTRAINT FK_DeduccionSemanal_Empleado FOREIGN KEY (IdEmpleado) 
+        REFERENCES dbo.Empleado(Id),
+    CONSTRAINT FK_DeduccionSemanal_SemanaPlanilla FOREIGN KEY (IdSemanaPlanilla) 
+        REFERENCES dbo.SemanaPlanilla(Id)
+);
+GO
