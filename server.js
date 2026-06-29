@@ -152,7 +152,7 @@ app.get('/api/planilla/semanal', async (req, res) => {
     try {
         let pool = await sql.connect(config);
         let result = await pool.request()
-            .input('pIdEmpleado', sql.Int, parseInt(idEmpleado))
+            .input('inIdEmpleado', sql.Int, parseInt(idEmpleado))
 
             .execute('dbo.sp_ConsultarTodoSemanalEmpleado');
 
@@ -170,7 +170,7 @@ app.get('/api/planilla/mensual', async (req, res) => {
     try {
         let pool = await sql.connect(config);
         let result = await pool.request()
-            .input('pIdEmpleado', sql.Int, parseInt(idEmpleado))
+            .input('inIdEmpleado', sql.Int, parseInt(idEmpleado))
 
             .execute('dbo.sp_ConsultarTodoMensualEmpleado');
 

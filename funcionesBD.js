@@ -101,7 +101,7 @@ export async function consultarTodoSemanalEmpleado(idEmpleado, idPostByUser = 1,
 }
 
 /*
-const res1 = await consultarTodoSemanalEmpleado(186)
+const res1 = await consultarTodoSemanalEmpleado(380)
 console.log(res1)
 */
 

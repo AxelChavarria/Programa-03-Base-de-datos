@@ -3,7 +3,7 @@ import { loginUsuario, cerrarSesion, obtenerListaEmpleados, consultarTodoSemanal
 document.addEventListener("DOMContentLoaded", () => {
 
     const admin = JSON.parse(sessionStorage.getItem("admin"))
-    console.log(admin)
+    console.log("admin: " + admin)
     const btnAtras = document.getElementById("btnAtras");
 
     if (admin == "1" && (location.pathname.includes("empleado.html") || location.pathname.includes("planillaSemanal.html") || location.pathname.includes("planillaMensual.html") || location.pathname.includes("salarioBruto.html"))) {
@@ -260,13 +260,19 @@ if (tablaPlanilla) {
 
     //llamamos a la base de datos
     const informacion = await consultarTodoSemanalEmpleado(idEmpleado)
-    console.log(informacion)
+    console.log(informacion[0])
+   
 
-    console.log(idEmpleado)
+    //console.log(idEmpleado)
+
+    
+    var n = Object.keys(informacion[0]).length
     //desplegamos la información
     informacion[0].forEach(emp => {  //pasar por las listas
+
         tablaPlanilla.innerHTML += `
             <tr data-id="${emp.IdSemanaPlanilla}">
+                    <td>${n}</td>
                     <td class="salario">${emp.SalarioBruto}</td>
                     <td class="deducciones">${emp.TotalDeducciones}</td>
                     <td>${emp.SalarioNeto}</td>
@@ -274,6 +280,7 @@ if (tablaPlanilla) {
                     <td>${emp.HorasExtrasNormales}</td>
                     <td>${emp.HorasExtrasDobles}</td>
                 </tr>`;
+                n-=1
     });
     
 
@@ -336,9 +343,19 @@ if (tablaSalario) {
     );
     
     salariosFiltrados.forEach(emp => {  //pasar por las listas
+
+        const fecha = new Date(emp.Fecha);
+
+        const fechaFormateada = fecha.toLocaleDateString("es-CR", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric"
+        });
+
+        console.log(fechaFormateada);
         tablaSalario.innerHTML += `
             <tr data-id="${emp.Id}">
-                    <td>${emp.Fecha}</td>
+                    <td>${fechaFormateada}</td>
                     <td>${emp.HoraEntrada}</td>
                     <td>${emp.HoraSalida}</td>
                     <td>${emp.HorasOrdinarias}</td>
@@ -361,15 +378,18 @@ if (tablaPlanilla1) {
     const informacion = await consultarTodoMensualEmpleado(idEmpleado)
 
 
+    var n = Object.keys(informacion[0]).length
     //desplegamos la información
 
     informacion[0].forEach(emp => {  //pasar por las listas
         tablaPlanilla1.innerHTML += `
             <tr data-id="${emp.IdMesPlanilla}">
+                    <td>${n}</td>
                     <td>${emp.SalarioBrutoMensual}</td>
                     <td class="deducciones">${emp.DeduccionesMensuales}</td>
                     <td>${emp.SalarioNetoMensual}</td>
                 </tr>`;
+                n-=1
     });
 
 
